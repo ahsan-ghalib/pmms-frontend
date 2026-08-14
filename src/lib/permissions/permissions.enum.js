@@ -1,0 +1,73 @@
+export const Permissions = {
+  LIST_COMPANIES: "List Companies",
+  ADD_COMPANIES: "Add Companies",
+  VIEW_COMPANIES: "View Companies",
+  EDIT_COMPANIES: "Edit Companies",
+  DELETE_COMPANIES: "Delete Companies",
+
+  LIST_USERS: "List Users",
+  ADD_USERS: "Add Users",
+  VIEW_USERS: "View Users",
+  SHOW_USERS: "View Users",
+  EDIT_USERS: "Edit Users",
+  DELETE_USERS: "Delete Users",
+  LOGIN_AS_USER: "View Users",
+  ASSIGN_USERS: "Assign Users",
+
+  LIST_ROLES: "List Roles & Permissions",
+  VIEW_ROLES: "View Roles & Permissions",
+  EDIT_ROLES: "Edit Roles & Permissions",
+
+  LIST_PROPERTIES: "List Properties",
+  ADD_PROPERTIES: "Add Properties",
+  VIEW_PROPERTIES: "View Properties",
+  EDIT_PROPERTIES: "Edit Properties",
+  DELETE_PROPERTIES: "Delete Properties",
+
+  LIST_LOCATIONS: "List Locations",
+  ADD_LOCATIONS: "Add Locations",
+  VIEW_LOCATIONS: "View Locations",
+  EDIT_LOCATIONS: "Edit Locations",
+  DELETE_LOCATIONS: "Delete Locations",
+
+  LIST_UNITS: "List Units",
+  ADD_UNITS: "Add Units",
+  VIEW_UNITS: "View Units",
+  EDIT_UNITS: "Edit Units",
+  DELETE_UNITS: "Delete Units",
+
+  LIST_CATEGORIES: "List Categories",
+  ADD_CATEGORIES: "Add Categories",
+  VIEW_CATEGORIES: "View Categories",
+  EDIT_CATEGORIES: "Edit Categories",
+  DELETE_CATEGORIES: "Delete Categories",
+
+  LIST_SERVICES: "List Services",
+  ADD_SERVICES: "Add Services",
+  VIEW_SERVICES: "View Services",
+  EDIT_SERVICES: "Edit Services",
+  DELETE_SERVICES: "Delete Services",
+
+  LIST_COMPLAINTS: "List Complaints",
+  ADD_COMPLAINTS: "Add Complaints",
+  VIEW_COMPLAINTS: "View Complaints",
+  EDIT_COMPLAINTS: "Edit Complaints",
+  ASSIGN_COMPLAINTS: "Assign Complaints",
+  VERIFY_COMPLAINTS: "Verify Complaints",
+  CLOSE_COMPLAINTS: "Close Complaints",
+
+  LIST_WORK_ORDERS: "List Work Orders",
+  ADD_WORK_ORDERS: "Add Work Orders",
+  VIEW_WORK_ORDERS: "View Work Orders",
+  EDIT_WORK_ORDERS: "Edit Work Orders",
+  ASSIGN_WORK_ORDERS: "Assign Work Orders",
+  VERIFY_WORK_ORDERS: "Verify Work Orders",
+  CLOSE_WORK_ORDERS: "Close Work Orders",
+  EXPORT_WORK_ORDERS: "Export Work Orders",
+
+  LIST_DASHBOARD: "List Dashboard",
+  VIEW_DASHBOARD: "View Dashboard",
+
+  LIST_COMPANY_SETTINGS: "List Company Settings",
+  CONFIGURE_COMPANY_SETTINGS: "Configure Company Settings",
+};

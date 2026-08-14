@@ -1,0 +1,379 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* Base Colors */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Primary Colors */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+
+  /* Secondary Colors */
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-accent: var(--secondary-accent);
+  --color-secondary-accent-foreground: var(--secondary-accent-foreground);
+
+  /* Muted Colors */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  /* Accent Colors */
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Status Colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-light: var(--warning-light);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-error-light: var(--error-light);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-light: var(--info-light);
+
+  /* Grocery Category Colors */
+  --color-fresh-produce: var(--fresh-produce);
+  --color-fresh-produce-foreground: var(--fresh-produce-foreground);
+  --color-fresh-produce-light: var(--fresh-produce-light);
+  --color-dairy: var(--dairy);
+  --color-dairy-foreground: var(--dairy-foreground);
+  --color-dairy-light: var(--dairy-light);
+  --color-meat: var(--meat);
+  --color-meat-foreground: var(--meat-foreground);
+  --color-meat-light: var(--meat-light);
+  --color-bakery: var(--bakery);
+  --color-bakery-foreground: var(--bakery-foreground);
+  --color-bakery-light: var(--bakery-light);
+  --color-pantry: var(--pantry);
+  --color-pantry-foreground: var(--pantry-foreground);
+  --color-pantry-light: var(--pantry-light);
+
+  /* Destructive */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Border & Input */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Chart Colors */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Border Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+    /* Base Colors - Sophisticated */
+  --background: oklch(0.99 0.003 220); /* Very light blue-gray */
+  --foreground: oklch(0.15 0.008 220); /* Deep blue-gray */
+  --card: oklch(1 0 0); /* Pure white for cards */
+  --card-foreground: oklch(0.15 0.008 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.008 220);
+
+  /* Primary Colors - Dashboard Purple Scheme */
+  --primary: #5B21B6;
+  --primary-foreground: #ffffff;
+  --primary-hover: #7C3AED; 
+  --primary-light: #f3e8ff; 
+
+  /* Secondary Colors - Fresh Grocery Red */
+  --secondary: oklch(0.62 0.20 25); /* Vibrant but friendly red */
+  --secondary-foreground: oklch(0.98 0.003 25);
+  --secondary-accent: oklch(0.70 0.16 20); /* Soft coral accent */
+  --secondary-accent-foreground: oklch(0.98 0.003 20);
+
+  /* Muted Colors */
+  --muted: oklch(0.93 0.008 220); /* Light blue-gray */
+  --muted-foreground: oklch(0.45 0.008 220); /* Medium blue-gray */
+
+  /* Accent Colors */
+  --accent: oklch(0.88 0.012 220); /* Subtle blue-gray accent */
+  --accent-foreground: oklch(0.25 0.008 220);
+
+  /* Status Colors for Badges & Alerts */
+  --success: oklch(0.60 0.15 140); /* Vibrant emerald */
+  --success-foreground: oklch(0.98 0.003 140);
+  --success-light: oklch(0.92 0.08 140); /* Light emerald background */
+
+  --warning: oklch(0.70 0.18 45); /* Vibrant amber */
+  --warning-foreground: oklch(0.15 0.008 45);
+  --warning-light: oklch(0.94 0.10 45); /* Light amber background */
+
+  --error: oklch(0.60 0.20 10); /* Vibrant red */
+  --error-foreground: oklch(0.98 0.003 10);
+  --error-light: oklch(0.94 0.08 10); /* Light red background */
+
+  --info: oklch(0.55 0.18 220); /* Rich blue */
+  --info-foreground: oklch(0.98 0.003 220);
+  --info-light: oklch(0.90 0.08 220); /* Light blue background */
+
+  /* Grocery Category Colors */
+  --fresh-produce: oklch(0.65 0.15 120); /* Fresh green for vegetables */
+  --fresh-produce-foreground: oklch(0.98 0.01 120);
+  --fresh-produce-light: oklch(0.92 0.08 120);
+
+  --dairy: oklch(0.75 0.08 60); /* Cream for dairy */
+  --dairy-foreground: oklch(0.25 0.02 60);
+  --dairy-light: oklch(0.95 0.04 60);
+
+  --meat: oklch(0.50 0.15 25); /* Red-brown for meat */
+  --meat-foreground: oklch(0.98 0.01 25);
+  --meat-light: oklch(0.90 0.08 25);
+
+  --bakery: oklch(0.70 0.12 45); /* Warm brown for bakery */
+  --bakery-foreground: oklch(0.25 0.02 45);
+  --bakery-light: oklch(0.92 0.06 45);
+
+  --pantry: oklch(0.60 0.10 280); /* Purple for pantry items */
+  --pantry-foreground: oklch(0.98 0.01 280);
+  --pantry-light: oklch(0.90 0.05 280);
+
+  /* Destructive */
+  --destructive: oklch(0.60 0.20 15);
+  --destructive-foreground: oklch(0.98 0.01 15);
+
+  /* Border & Input */
+  --border: oklch(0.88 0.005 240); /* Subtle gray border */
+  --input: oklch(0.88 0.005 240);
+  --ring: #7C3AED; /* Primary color for focus rings (purple) */
+
+  /* Chart Colors for Analytics */
+  --chart-1: oklch(0.50 0.15 240); /* Primary blue */
+  --chart-2: oklch(0.60 0.12 30); /* Orange */
+  --chart-3: oklch(0.55 0.12 150); /* Green */
+  --chart-4: oklch(0.65 0.15 60); /* Amber */
+  --chart-5: oklch(0.60 0.12 280); /* Purple */
+  --chart-6: oklch(0.55 0.18 20); /* Red */
+  --chart-7: oklch(0.50 0.12 200); /* Light blue */
+  --chart-8: oklch(0.65 0.10 320); /* Pink */
+
+  /* Sidebar - Elegant Slate */
+  --sidebar: oklch(0.96 0.008 220); /* Light blue-gray */
+  --sidebar-foreground: oklch(0.20 0.008 220);
+  --sidebar-primary: oklch(0.82 0.14 100);
+  --sidebar-primary-foreground: oklch(0.18 0.010 100);
+  --sidebar-accent: oklch(0.90 0.012 220);
+  --sidebar-accent-foreground: oklch(0.20 0.008 220);
+  --sidebar-border: oklch(0.88 0.010 220);
+  --sidebar-ring: #7C3AED;
+}
+
+.dark {
+  /* Base Colors - Sophisticated Dark */
+  --background: oklch(0.09 0.008 220); /* Deep blue-gray */
+  --foreground: oklch(0.90 0.008 220); /* Light blue-gray text */
+  --card: oklch(0.13 0.008 220); /* Dark blue-gray cards */
+  --card-foreground: oklch(0.90 0.008 220);
+  --popover: oklch(0.13 0.008 220);
+  --popover-foreground: oklch(0.90 0.008 220);
+
+  /* Primary Colors - Purple for dark mode */
+  --primary: #7C3AED;
+  --primary-foreground: #ffffff;
+  --primary-hover: #5B21B6;
+  --primary-light: rgba(124, 58, 237, 0.2); 
+
+  /* Secondary Colors - Bright Red for Dark Mode */
+  --secondary: oklch(0.70 0.20 25); /* Bright but comfortable red */
+  --secondary-foreground: oklch(0.10 0.010 25);
+  --secondary-accent: oklch(0.68 0.18 20); /* Coral accent */
+  --secondary-accent-foreground: oklch(0.10 0.010 20);
+
+  /* Muted Colors */
+  --muted: oklch(0.16 0.008 220); /* Dark blue-gray */
+  --muted-foreground: oklch(0.60 0.008 220); /* Medium blue-gray */
+
+  /* Accent Colors */
+  --accent: oklch(0.20 0.010 220); /* Dark blue-gray accent */
+  --accent-foreground: oklch(0.90 0.008 220);
+
+  /* Status Colors for Dark Mode */
+  --success: oklch(0.65 0.15 142.5); /* Bright success green */
+  --success-foreground: oklch(0.12 0.02 142.5);
+  --success-light: oklch(0.25 0.05 142.5); /* Dark success background */
+
+  --warning: oklch(0.75 0.15 65); /* Bright warning orange */
+  --warning-foreground: oklch(0.12 0.02 65);
+  --warning-light: oklch(0.25 0.05 65); /* Dark warning background */
+
+  --error: oklch(0.65 0.20 15); /* Bright error red */
+  --error-foreground: oklch(0.95 0.01 15);
+  --error-light: oklch(0.25 0.05 15); /* Dark error background */
+
+  --info: oklch(0.60 0.15 220); /* Bright info blue */
+  --info-foreground: oklch(0.12 0.02 220);
+  --info-light: oklch(0.25 0.05 220); /* Dark info background */
+
+  /* Grocery Category Colors - Dark Mode */
+  --fresh-produce: oklch(0.70 0.15 120); /* Bright fresh green */
+  --fresh-produce-foreground: oklch(0.12 0.02 120);
+  --fresh-produce-light: oklch(0.25 0.05 120);
+
+  --dairy: oklch(0.80 0.08 60); /* Bright cream */
+  --dairy-foreground: oklch(0.12 0.02 60);
+  --dairy-light: oklch(0.25 0.03 60);
+
+  --meat: oklch(0.55 0.15 25); /* Bright red-brown */
+  --meat-foreground: oklch(0.95 0.01 25);
+  --meat-light: oklch(0.25 0.05 25);
+
+  --bakery: oklch(0.75 0.12 45); /* Bright warm brown */
+  --bakery-foreground: oklch(0.12 0.02 45);
+  --bakery-light: oklch(0.25 0.03 45);
+
+  --pantry: oklch(0.65 0.10 280); /* Bright purple */
+  --pantry-foreground: oklch(0.95 0.01 280);
+  --pantry-light: oklch(0.25 0.03 280);
+
+  /* Destructive */
+  --destructive: oklch(0.65 0.20 15);
+  --destructive-foreground: oklch(0.95 0.01 15);
+
+  /* Border & Input */
+  --border: oklch(0.25 0.02 142.5); /* Dark green border */
+  --input: oklch(0.25 0.02 142.5);
+  --ring: #7C3AED; /* Primary color for focus rings (purple) */
+
+  /* Chart Colors for Dark Mode */
+  --chart-1: oklch(0.65 0.18 142.5); /* Bright primary green */
+  --chart-2: oklch(0.70 0.15 45); /* Bright orange */
+  --chart-3: oklch(0.60 0.15 220); /* Bright blue */
+  --chart-4: oklch(0.75 0.15 65); /* Bright yellow */
+  --chart-5: oklch(0.65 0.15 280); /* Bright purple */
+  --chart-6: oklch(0.55 0.15 25); /* Bright red */
+  --chart-7: oklch(0.70 0.15 120); /* Bright light green */
+  --chart-8: oklch(0.75 0.12 300); /* Bright pink */
+
+  /* Sidebar - Elegant Dark */
+  --sidebar: oklch(0.11 0.008 220); /* Dark blue-gray */
+  --sidebar-foreground: oklch(0.90 0.008 220);
+  --sidebar-primary: oklch(0.78 0.18 100);
+  --sidebar-primary-foreground: oklch(0.09 0.008 100);
+  --sidebar-accent: oklch(0.18 0.010 220);
+  --sidebar-accent-foreground: oklch(0.90 0.008 220);
+  --sidebar-border: oklch(0.20 0.010 220);
+  --sidebar-ring: oklch(0.70 0.18 100);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Quill Editor Styles */
+.ql-toolbar {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.ql-container {
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+}
+
+.ql-editor {
+  min-height: 200px;
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+
+
+
+button, a{
+  cursor: pointer;
+}
+
+/* Arabic typography — bolder + 2px larger base */
+html.pref-lang-ar,
+html[lang="ar"] {
+  font-size: 18px;
+}
+
+html.pref-lang-ar body,
+body.lang-ar {
+  font-family: var(--font-cairo), var(--font-inter), sans-serif;
+  font-weight: 600;
+}
+
+html.pref-lang-ar h1,
+html.pref-lang-ar h2,
+html.pref-lang-ar h3,
+html.pref-lang-ar h4,
+html.pref-lang-ar h5,
+html.pref-lang-ar h6 {
+  font-weight: 700;
+}
+
+html.pref-lang-ar .font-medium {
+  font-weight: 600;
+}
+
+html.pref-lang-ar .font-semibold {
+  font-weight: 700;
+}
+
+html.pref-lang-ar .font-bold {
+  font-weight: 700;
+}
+/* App-wide Font Family based on Language */
+html.lang-en body {
+  font-family: var(--font-inter), sans-serif !important;
+}
+html.lang-ar body {
+  font-family: var(--font-cairo), sans-serif !important;
+}
