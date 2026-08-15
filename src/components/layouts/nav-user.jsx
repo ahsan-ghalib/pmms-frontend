@@ -47,7 +47,7 @@ export function NavUser({ user, status = "unauthenticated" }) {
     }
   }, []);
 
-  const baseName = user?.name ?? (isLoading ? "Loading…" : "Soouq Live Admin");
+  const baseName = user?.name ?? (isLoading ? "Loading…" : "PMMS Admin");
   const baseEmail = user?.email ?? "";
 
   const displayName = impersonated?.name || baseName;
@@ -86,73 +86,73 @@ export function NavUser({ user, status = "unauthenticated" }) {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="h-auto py-2.5">
-              <Avatar className="size-9 rounded-xl ring-2 ring-violet-400/30">
+            <SidebarMenuButton size="lg" className="sidebar-user-trigger h-auto py-2">
+              <Avatar className="sidebar-user-avatar size-9 rounded-xl">
                 <AvatarImage src={avatarSrc} alt={displayName} />
-                <AvatarFallback className="rounded-xl bg-violet-600/30 text-white">
+                <AvatarFallback className="rounded-xl bg-violet-600 text-white">
                   <User className="size-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-white">
+              <div className="grid min-w-0 flex-1 text-start text-sm leading-tight">
+                <span className="sidebar-user-name truncate font-semibold">
                   {displayName}
                   {impersonated ? (
-                    <span className="ms-1 text-[10px] font-normal text-amber-400">
+                    <span className="ms-1 text-[10px] font-normal text-amber-500">
                       (impersonating)
                     </span>
                   ) : null}
                 </span>
                 {displayEmail ? (
-                  <span className="truncate text-xs text-white/45">{displayEmail}</span>
+                  <span className="sidebar-user-email truncate text-xs">{displayEmail}</span>
                 ) : null}
               </div>
-              <ChevronsUpDown className="ms-auto size-4 shrink-0 text-white/35" />
+              <ChevronsUpDown className="sidebar-user-chevron ms-auto size-4 shrink-0" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="min-w-56 w-(--radix-dropdown-menu-trigger-width) rounded-xl border-white/10 bg-slate-900/95 text-white backdrop-blur-xl"
+            className="min-w-56 w-(--radix-dropdown-menu-trigger-width) rounded-2xl border-border/70 bg-popover/95 backdrop-blur-xl"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={8}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-2 py-2 text-left text-sm">
+              <div className="flex items-center gap-2 px-2 py-2 text-start text-sm">
                 <Avatar className="size-9 rounded-xl">
                   <AvatarImage src={avatarSrc} alt={displayName} />
-                  <AvatarFallback className="rounded-xl bg-violet-600/30">
+                  <AvatarFallback className="rounded-xl bg-violet-600 text-white">
                     <User className="size-4" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <div className="grid min-w-0 flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-medium">{displayName}</span>
                   {displayEmail ? (
-                    <span className="truncate text-xs text-white/50">{displayEmail}</span>
+                    <span className="truncate text-xs text-muted-foreground">{displayEmail}</span>
                   ) : null}
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <Link href="/profile" className="w-full">
-                <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
-                  <BadgeCheck className="text-violet-400 mr-2" />
+                <DropdownMenuItem className="cursor-pointer">
+                  <BadgeCheck className="text-violet-500" />
                   Account
                 </DropdownMenuItem>
               </Link>
               <Link href="/settings" className="w-full">
-                <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
-                  <Settings className="text-violet-400 mr-2" />
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="text-violet-500" />
                   Settings
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={(e) => {
                 e.preventDefault();
                 handleLogout();
               }}
-              className="cursor-pointer text-rose-400 focus:bg-rose-500/15 focus:text-rose-300"
+              className="cursor-pointer text-rose-500 focus:text-rose-500"
             >
               <LogOut className="size-4" />
               <span className="text-sm font-medium">Logout</span>
