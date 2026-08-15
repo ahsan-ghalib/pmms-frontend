@@ -88,6 +88,7 @@ export function useNavItems() {
 
 export function AppSidebar({ ...props }) {
   const { data: session, status } = useSession();
+  const t = useT("common");
   const navItems = useNavItems();
   const role = session?.user?.role;
 
@@ -114,21 +115,24 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar
       collapsible="icon"
-      variant="floating"
-      className="modern-sidebar [&_[data-slot=sidebar-container]]:p-2.5"
+      variant="sidebar"
+      className="modern-sidebar"
       {...props}
     >
-      <SidebarHeader className="px-3 pb-2 pt-3">
+      <SidebarHeader className="sidebar-header-block">
         <SidebarBrand />
-        <div className="mt-3 px-1">
+      </SidebarHeader>
+      <SidebarContent className="sidebar-scroll">
+        <div className="px-2 pt-1">
+          <p className="sidebar-section-label group-data-[collapsible=icon]:hidden">
+            {t("sidebar_overview", { defaultMessage: "Overview" })}
+          </p>
           <NavDashboard />
         </div>
         <div className="sidebar-divider" />
-      </SidebarHeader>
-      <SidebarContent className="px-1 pb-2">
         <NavMain items={filteredNavItems} />
       </SidebarContent>
-      <SidebarFooter className="sidebar-user-card px-3 pb-3 pt-2">
+      <SidebarFooter className="sidebar-user-card">
         <NavUser user={user} status={status} />
       </SidebarFooter>
       <SidebarRail />

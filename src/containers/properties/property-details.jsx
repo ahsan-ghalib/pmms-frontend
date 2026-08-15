@@ -164,9 +164,20 @@ export default function PropertyDetails() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-600">{t("maps_pin", { defaultMessage: "Maps pin" })}</p>
           <p className="mt-3 font-mono text-sm">{tree.latitude ?? "—"}, {tree.longitude ?? "—"}</p>
           {mapsHref(tree) ? (
-            <a href={mapsHref(tree)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:underline">
-              <MapPin className="h-4 w-4" /> {t("open_maps", { defaultMessage: "Open maps" })}
-            </a>
+            <>
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200/70 dark:border-white/10">
+                <iframe
+                  title={t("maps_pin", { defaultMessage: "Maps pin" })}
+                  src={`https://maps.google.com/maps?q=${tree.latitude},${tree.longitude}&z=15&output=embed`}
+                  className="h-48 w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <a href={mapsHref(tree)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:underline">
+                <MapPin className="h-4 w-4" /> {t("open_maps", { defaultMessage: "Open maps" })}
+              </a>
+            </>
           ) : (
             <p className="mt-3 text-sm text-slate-400">{t("prop_maps_empty", { defaultMessage: "Add coordinates to generate a navigation link." })}</p>
           )}

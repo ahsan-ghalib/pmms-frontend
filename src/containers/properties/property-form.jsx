@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Landmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,11 @@ import { apiError } from "@/lib/pmms";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
+
+const LocationPickerMap = dynamic(
+  () => import("@/components/common/location-picker-map"),
+  { ssr: false }
+);
 
 const FALLBACK_TYPES = [
   { value: "villa", label: "Villa" },
@@ -30,7 +36,7 @@ export default function PropertyForm({ property }) {
   const [types, setTypes] = useState([]);
   const isSuper = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
 
-  const { control, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+  const { control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       company_id: property?.company_id || "",
       name: property?.name || "",
@@ -57,6 +63,11 @@ export default function PropertyForm({ property }) {
   const mapsPreview = latitude !== "" && longitude !== "" && latitude != null && longitude != null
     ? `https://www.google.com/maps?q=${latitude},${longitude}`
     : null;
+
+  const handleLocationChange = useCallback((lat, lng) => {
+    setValue("latitude", lat, { shouldDirty: true, shouldValidate: true });
+    setValue("longitude", lng, { shouldDirty: true, shouldValidate: true });
+  }, [setValue]);
 
   useEffect(() => {
     propertiesApi.types().then((data) => setTypes(Array.isArray(data) ? data : [])).catch(() => {});
@@ -177,7 +188,16 @@ export default function PropertyForm({ property }) {
       <section className="glass-panel grid gap-4 rounded-2xl p-6 md:grid-cols-2">
         <div className="md:col-span-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-600">{t("maps_pin", { defaultMessage: "Maps pin" })}</p>
-          <p className="mt-1 text-sm text-slate-500">{t("prop_maps_desc", { defaultMessage: "Latitude and longitude are stored and opened with the same Google Maps link on web and mobile." })}</p>
+          <p className="mt-1 text-sm text-slate-500">{t("prop_maps_desc", { defaultMessage: "Search or click the map to drop a pin. Coordinates are stored and opened with the same Google Maps link on web and mobile." })}</p>
+        </div>
+        <div className="md:col-span-2">
+          <LocationPickerMap
+            latitude={latitude}
+            longitude={longitude}
+            onLocationChange={handleLocationChange}
+            height="360px"
+            searchPlaceholder={t("prop_maps_search", { defaultMessage: "Search an address or place..." })}
+          />
         </div>
         <TextField label={t("latitude", { defaultMessage: "Latitude" })} name="latitude" control={control} errors={errors} />
         <TextField label={t("longitude", { defaultMessage: "Longitude" })} name="longitude" control={control} errors={errors} />
@@ -187,7 +207,7 @@ export default function PropertyForm({ property }) {
               <MapPin className="h-4 w-4" /> {t("open_maps", { defaultMessage: "Open maps" })}
             </a>
           ) : (
-            <p className="text-sm text-slate-400">{t("prop_maps_empty", { defaultMessage: "Add coordinates to generate a navigation link." })}</p>
+            <p className="text-sm text-slate-400">{t("prop_maps_click", { defaultMessage: "Click the map or search a place to drop a pin." })}</p>
           )}
         </div>
       </section>

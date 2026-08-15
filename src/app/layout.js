@@ -31,6 +31,11 @@ export const metadata = {
   title: "PMMS | Property Maintenance Management",
   description:
     "PMMS is a bilingual property and facility maintenance platform for companies, supervisors, technicians, and tenants in Qatar and the GCC.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   openGraph: {
     title: "PMMS | Property Maintenance Management",
     description:
