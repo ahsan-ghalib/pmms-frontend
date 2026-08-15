@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TextField, SelectField } from "@/components/form-fields";
 import { useT } from "@/lib/use-t";
+
+const LocationPickerMap = dynamic(
+  () => import("@/components/common/location-picker-map"),
+  { ssr: false }
+);
 
 const LOCATION_TYPES = ["building", "wing", "block", "floor", "zone", "parking"];
 const UNIT_TYPES = ["residential", "office", "retail", "common", "vacant", "storage"];
 
 export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit, busy }) {
   const t = useT("common");
-  const { control, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       name: "",
       code: "",
@@ -43,9 +49,16 @@ export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit
     unit: node?.id ? t("edit_unit", { defaultMessage: "Edit unit" }) : t("add_unit", { defaultMessage: "Add unit" }),
   }[mode];
 
+  const latitude = watch("latitude");
+  const longitude = watch("longitude");
+  const handleLocationChange = useCallback((lat, lng) => {
+    setValue("latitude", lat, { shouldDirty: true });
+    setValue("longitude", lng, { shouldDirty: true });
+  }, [setValue]);
+
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="rounded-2xl sm:max-w-lg">
+      <DialogContent className="rounded-2xl sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -85,9 +98,18 @@ export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit
             ]}
           />
           {mode !== "unit" && (
-            <div className="grid grid-cols-2 gap-3">
-              <TextField label={t("latitude", { defaultMessage: "Latitude" })} name="latitude" control={control} />
-              <TextField label={t("longitude", { defaultMessage: "Longitude" })} name="longitude" control={control} />
+            <div className="space-y-3">
+              <LocationPickerMap
+                latitude={latitude}
+                longitude={longitude}
+                onLocationChange={handleLocationChange}
+                height="240px"
+                searchPlaceholder={t("prop_maps_search", { defaultMessage: "Search an address or place..." })}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <TextField label={t("latitude", { defaultMessage: "Latitude" })} name="latitude" control={control} />
+                <TextField label={t("longitude", { defaultMessage: "Longitude" })} name="longitude" control={control} />
+              </div>
             </div>
           )}
           <DialogFooter>
