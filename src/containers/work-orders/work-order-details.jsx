@@ -22,6 +22,7 @@ import { useSession } from "next-auth/react";
 import { Roles, isManager, normalizeRole } from "@/lib/permissions/role-access";
 import WorkOrderPhotos from "@/components/work-orders/work-order-photos";
 import AssetScanner from "@/components/work-orders/asset-scanner";
+import SlaPanel from "@/components/pmms/sla-panel";
 
 function historyActor(event) {
   if (event.on_behalf && event.actor_name && event.on_behalf_of_name) {
@@ -137,6 +138,8 @@ export default function WorkOrderDetails() {
         <div className="rounded-2xl border bg-white/60 p-4"><p className="text-xs text-slate-500">Schedule</p><p className="font-semibold">{workOrder.scheduled_date || "—"}</p></div>
       </div>
 
+      <SlaPanel sla={workOrder.sla} workOrderId={workOrder.id} />
+
       <div className="rounded-2xl border bg-white/60 p-5">
         <p className="text-xs uppercase text-slate-500">Description</p>
         <p className="mt-2">{workOrder.description || workOrder.service_summary || "—"}</p>
@@ -220,14 +223,33 @@ export default function WorkOrderDetails() {
               </div>
               {(request.items || []).map((item) => (
                 <p key={`${request.id}-${item.part_id}`} className="text-xs text-slate-500">
-                  {item.part_name || item.sku} · requested {item.requested_quantity} · issued {item.issued_quantity || 0} · used {item.used_quantity || 0}
+                  {item.part_name || item.sku} · requested {item.requested_quantity} · approved {item.approved_quantity || 0} · issued {item.issued_quantity || 0} · used {item.used_quantity || 0} · returned {item.returned_quantity || 0}
                 </p>
               ))}
               {manager && request.status === "requested" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => run(() => workOrdersApi.approvePartRequest(request.id), "Parts approved")}>Approve</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setPartForm((current) => ({ ...current, request_id: request.id }));
+                    setDialog("reject-parts");
+                  }}>Reject</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setPartForm((current) => ({ ...current, request_id: request.id }));
+                    setDialog("issue-request");
+                  }}>Issue</Button>
+                </div>
+              )}
+              {manager && request.status === "approved" && (
                 <Button size="sm" variant="outline" onClick={() => {
                   setPartForm((current) => ({ ...current, request_id: request.id }));
                   setDialog("issue-request");
                 }}>Issue</Button>
+              )}
+              {(manager || canAct) && request.status === "issued" && !closed && (
+                <Button size="sm" variant="outline" onClick={() => {
+                  setPartForm((current) => ({ ...current, request_id: request.id }));
+                  setDialog("return-parts");
+                }}>Return unused</Button>
               )}
             </div>
           ))}
@@ -273,6 +295,20 @@ export default function WorkOrderDetails() {
       <ReasonDialog open={dialog === "rework"} onOpenChange={() => setDialog(null)} title="Return for rework" onSubmit={({ reason }) => run(() => workOrdersApi.rework(workOrder.id, reason), "Returned for rework")} />
       <ReasonDialog open={dialog === "close"} onOpenChange={() => setDialog(null)} title="Close work order" onSubmit={({ reason }) => run(() => workOrdersApi.close(workOrder.id, reason), "Closed")} />
       <ReasonDialog open={dialog === "cancel"} onOpenChange={() => setDialog(null)} title="Cancel work order" confirmLabel="Cancel work order" onSubmit={({ reason }) => run(() => workOrdersApi.cancel(workOrder.id, reason), "Cancelled")} />
+      <ReasonDialog open={dialog === "reject-parts"} onOpenChange={() => setDialog(null)} title="Reject parts request" confirmLabel="Reject" onSubmit={({ reason }) => run(() => workOrdersApi.rejectPartRequest(partForm.request_id, reason), "Parts rejected")} />
+      <Dialog open={dialog === "return-parts"} onOpenChange={() => setDialog(null)}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Return unused parts</DialogTitle></DialogHeader>
+          <select className="w-full border rounded-md h-10 px-3" value={partForm.stock_location_id} onChange={(event) => setPartForm((current) => ({ ...current, stock_location_id: event.target.value }))}>
+            <option value="">Stock location</option>
+            {catalog.stock_locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+          </select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialog(null)}>Cancel</Button>
+            <Button onClick={() => run(() => workOrdersApi.returnPartRequest(partForm.request_id, { stock_location_id: partForm.stock_location_id }), "Unused parts returned")}>Return</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ReasonDialog open={dialog === "rate"} onOpenChange={() => setDialog(null)} title="Rate this job" extraFields={[{ name: "rating", label: "Rating 1-5", type: "number", required: true }]} onSubmit={({ reason, rating }) => run(() => workOrdersApi.rate(workOrder.id, { rating: Number(rating), feedback: reason }), "Thanks for the rating")} />
 
       <Dialog open={dialog === "assign"} onOpenChange={() => setDialog(null)}>
@@ -377,8 +413,9 @@ export default function WorkOrderDetails() {
       <Dialog open={dialog === "parts"} onOpenChange={() => setDialog(null)}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Request parts</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-500">This places the work order on hold with reason “Parts Required”. A supervisor issues stock.</p>
+          <p className="text-sm text-slate-500">A reason is required. This places the work order on hold and notifies the supervisor.</p>
           <div className="space-y-3">
+            <Textarea required placeholder="Reason" value={partForm.reason} onChange={(event) => setPartForm((current) => ({ ...current, reason: event.target.value }))} />
             <select className="w-full border rounded-md h-10 px-3" value={partForm.part_id} onChange={(event) => setPartForm((current) => ({ ...current, part_id: event.target.value }))}>
               <option value="">Select part</option>
               {catalog.parts.map((part) => <option key={part.id} value={part.id}>{part.name} ({part.sku})</option>)}
@@ -388,7 +425,7 @@ export default function WorkOrderDetails() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog(null)}>Cancel</Button>
             <Button onClick={() => run(() => workOrdersApi.requestParts(workOrder.id, {
-              reason: "Parts Required",
+              reason: partForm.reason || "Parts Required",
               items: [{ part_id: partForm.part_id, quantity: Number(partForm.quantity) }],
             }), "Parts requested")}>Request and hold</Button>
           </DialogFooter>

@@ -10,6 +10,7 @@ import PageHeader from "@/components/pmms/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, formatDate } from "@/lib/pmms";
+import SlaPanel from "@/components/pmms/sla-panel";
 
 const NEXT = {
   submitted: "assigned",
@@ -72,6 +73,7 @@ export default function PmmsComplaintDetails() {
         <div className="rounded-2xl border bg-white/60 p-4"><p className="text-xs text-slate-500">Category</p><p className="font-semibold">{complaint.category?.name_en || "—"}</p></div>
         <div className="rounded-2xl border bg-white/60 p-4"><p className="text-xs text-slate-500">Service</p><p className="font-semibold">{complaint.service?.name_en || "—"}</p></div>
       </div>
+      <SlaPanel sla={complaint.sla} complaintId={complaint.id} workOrderId={complaint.work_orders?.[0]?.id} />
       <div className="rounded-2xl border bg-white/60 p-5">
         <p className="text-xs uppercase text-slate-500">Description</p>
         <p className="mt-2 leading-relaxed">{complaint.description}</p>

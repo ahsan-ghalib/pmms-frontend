@@ -62,6 +62,10 @@ export default function LoginForm() {
           if (session?.user?.vendor_info) {
             localStorage.setItem("vendor_info", JSON.stringify(session.user.vendor_info));
           }
+          if (session?.user?.language) {
+            const { persistLocale } = await import("@/lib/locale-utils");
+            persistLocale(session.user.language);
+          }
           
           toast.success(t("Login_Success"), {
             duration: 1000,
