@@ -20,6 +20,15 @@ import { apiError, formatDate, labelize } from "@/lib/pmms";
 import { compressImages, formatDuration, formatMeters, getGps } from "@/lib/geo";
 import { useSession } from "next-auth/react";
 import { Roles, isManager, normalizeRole } from "@/lib/permissions/role-access";
+import WorkOrderPhotos from "@/components/work-orders/work-order-photos";
+import AssetScanner from "@/components/work-orders/asset-scanner";
+
+function historyActor(event) {
+  if (event.on_behalf && event.actor_name && event.on_behalf_of_name) {
+    return `${event.actor_name} on behalf of ${event.on_behalf_of_name}`;
+  }
+  return event.actor_name || "";
+}
 
 export default function WorkOrderDetails() {
   const { id } = useParams();
@@ -38,6 +47,7 @@ export default function WorkOrderDetails() {
   const [taxonomy, setTaxonomy] = useState({ category_id: "", service_id: "" });
   const [assetCode, setAssetCode] = useState("");
   const [partForm, setPartForm] = useState({ part_id: "", quantity: "1", stock_location_id: "", reason: "Parts Required" });
+  const [duty, setDuty] = useState(null);
 
   const load = async () => {
     try {
@@ -59,7 +69,10 @@ export default function WorkOrderDetails() {
       parts: data?.parts || [],
       stock_locations: data?.stock_locations || [],
     })).catch(() => {});
-  }, [id]);
+    if (role === Roles.TECHNICIAN) {
+      techniciansApi.duty().then(setDuty).catch(() => {});
+    }
+  }, [id, role]);
 
   if (!workOrder) return <div className="p-8 text-center text-muted-foreground">Loading work order...</div>;
 
@@ -74,6 +87,8 @@ export default function WorkOrderDetails() {
   const lastCheckout = (workOrder.checkouts || [])[(workOrder.checkouts || []).length - 1];
   const accepted = Boolean(workOrder.accepted_at);
   const canStart = canAct && accepted && workOrder.status === "assigned";
+  const dutyBlocksAccept = role === Roles.TECHNICIAN && !duty?.on_duty;
+  const mustScanAsset = Boolean(settings.require_asset_scan_to_start || workOrder.asset_id);
 
   const run = async (action, success) => {
     try {
@@ -129,8 +144,13 @@ export default function WorkOrderDetails() {
 
       <div className="flex flex-wrap gap-2">
         {manager && !closed && <Button onClick={() => setDialog("assign")}>Assign crew</Button>}
-        {canAct && workOrder.status === "assigned" && !accepted && <Button onClick={() => run(() => workOrdersApi.accept(workOrder.id), "Accepted")}>Accept</Button>}
+        {canAct && workOrder.status === "assigned" && !accepted && (
+          <Button disabled={dutyBlocksAccept} onClick={() => run(() => workOrdersApi.accept(workOrder.id), "Accepted")}>Accept</Button>
+        )}
         {canAct && workOrder.status === "assigned" && !accepted && <Button variant="outline" onClick={() => setDialog("reject")}>Reject</Button>}
+        {dutyBlocksAccept && workOrder.status === "assigned" && !accepted && (
+          <p className="w-full text-xs text-amber-600">Turn Duty ON to accept new jobs.</p>
+        )}
         {canAct && accepted && !checkedIn && <Button onClick={() => withGps((coords) => workOrdersApi.checkIn(workOrder.id, coords), "Checked in")}>GPS check-in</Button>}
         {canAct && accepted && !workOrder.asset_validated_at && <Button variant="outline" onClick={() => setDialog("scan")}>Scan asset</Button>}
         {canStart && <Button onClick={() => run(() => workOrdersApi.start(workOrder.id), "Work started")}>Start work</Button>}
@@ -168,8 +188,8 @@ export default function WorkOrderDetails() {
           {lastCheckout?.on_site_duration_seconds != null && (
             <p className="text-xs text-slate-500">On-site: {formatDuration(lastCheckout.on_site_duration_seconds)}</p>
           )}
-          {settings.require_asset_scan_to_start && !workOrder.asset_validated_at && (
-            <p className="text-xs text-amber-600">Work cannot start until the asset is scanned and validated.</p>
+          {mustScanAsset && !workOrder.asset_validated_at && (
+            <p className="text-xs text-amber-600">Work cannot start until the linked asset is scanned and validated.</p>
           )}
         </div>
         <div className="rounded-2xl border bg-white/60 p-5 space-y-3">
@@ -214,6 +234,11 @@ export default function WorkOrderDetails() {
         </div>
       </div>
 
+      <div className="rounded-2xl border bg-white/60 p-5 space-y-3">
+        <p className="font-semibold">Photos</p>
+        <WorkOrderPhotos workOrderId={workOrder.id} photos={workOrder.photos || []} />
+      </div>
+
       <div className="rounded-2xl border bg-white/60 p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="font-semibold">Full history</p>
@@ -233,6 +258,7 @@ export default function WorkOrderDetails() {
               <div>
                 <p className="text-sm font-medium">{labelize(event.type)} {event.to ? `→ ${labelize(event.to)}` : event.event ? `· ${labelize(event.event)}` : ""}</p>
                 <p className="text-xs text-slate-500">{event.reason || event.note || event.notes || ""}</p>
+                {historyActor(event) && <p className="text-xs text-violet-700">{historyActor(event)}</p>}
               </div>
               <span className="text-xs text-slate-400 whitespace-nowrap">{formatDate(event.at)}</span>
             </div>
@@ -284,7 +310,8 @@ export default function WorkOrderDetails() {
       <Dialog open={dialog === "scan"} onOpenChange={() => setDialog(null)}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Validate asset</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-500">Scan a QR/barcode with the camera, or enter the asset code manually.</p>
+          <p className="text-sm text-slate-500">Scan a QR/barcode with the live camera, capture a photo, or enter the asset code manually.</p>
+          <AssetScanner onCode={setAssetCode} />
           <Input
             placeholder="Asset code"
             value={assetCode}

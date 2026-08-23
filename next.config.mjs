@@ -23,6 +23,11 @@ const nextConfig = {
         pathname: "/**",
       },
       {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
         hostname: "livemarket-storage-bucket.oss-me-central-1.aliyuncs.com",
         pathname: "/**",

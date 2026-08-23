@@ -28,7 +28,10 @@ export function useDutyTracking({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled) return undefined;
     refresh().catch(() => {});
-    return undefined;
+    const poll = setInterval(() => {
+      refresh().catch(() => {});
+    }, 20000);
+    return () => clearInterval(poll);
   }, [enabled, refresh]);
 
   useEffect(() => {

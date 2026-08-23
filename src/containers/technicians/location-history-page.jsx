@@ -52,6 +52,14 @@ export default function LocationHistoryPage() {
     [history]
   );
 
+  const path = useMemo(
+    () =>
+      (history?.points || [])
+        .filter((point) => point.latitude != null && point.longitude != null)
+        .map((point) => ({ lat: parseFloat(point.latitude), lng: parseFloat(point.longitude) })),
+    [history]
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -83,6 +91,7 @@ export default function LocationHistoryPage() {
 
       <MapWithMarkers
         markers={markers}
+        path={path}
         height="420px"
         minHeight="360px"
         defaultZoom={12}

@@ -255,6 +255,12 @@ export default function DutyPage() {
         )}
       </section>
 
+      {!duty?.on_duty && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          {t("duty_accept_blocked", { defaultMessage: "Duty is OFF. You can review assigned jobs, but new jobs cannot be accepted until you turn Duty ON." })}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-6">
         <StatCard title={t("open_jobs", { defaultMessage: "Open jobs" })} value={stats.open} theme="blue" icon={PlayCircle} />
         <StatCard title={t("in_progress", { defaultMessage: "In progress" })} value={stats.inProgress} theme="purple" icon={Radio} />
@@ -325,6 +331,11 @@ export default function DutyPage() {
                         {isCurrent && (
                           <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700 dark:bg-violet-500/20 dark:text-violet-200">
                             {t("current_job", { defaultMessage: "Current job" })}
+                          </span>
+                        )}
+                        {job.status === "assigned" && !job.accepted_at && !duty?.on_duty && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-100">
+                            {t("accept_needs_duty", { defaultMessage: "Accept requires duty ON" })}
                           </span>
                         )}
                       </div>

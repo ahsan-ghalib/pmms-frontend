@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Polyline } from "@react-google-maps/api";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function MapWithMarkers({
@@ -14,6 +14,7 @@ export default function MapWithMarkers({
   className = "",
   autoFitBounds = true,
   renderInfoWindow, // Function that takes (markerData, onClose) and returns React Node
+  path = [],
 }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
@@ -136,6 +137,17 @@ export default function MapWithMarkers({
             />
           );
         })}
+
+        {path.length > 1 && (
+          <Polyline
+            path={path}
+            options={{
+              strokeColor: "#7c3aed",
+              strokeOpacity: 0.85,
+              strokeWeight: 3,
+            }}
+          />
+        )}
 
         {selectedMarker && renderInfoWindow && (
           <InfoWindow

@@ -33,6 +33,10 @@ export const workOrdersApi = {
   scanAsset: async (id, code) => (await axiosInstance.post(`/work-orders/${id}/scan-asset`, { code })).data,
   start: async (id) => (await axiosInstance.post(`/work-orders/${id}/start`)).data,
   uploadPhotos: async (id, form) => (await axiosInstance.post(`/work-orders/${id}/photos`, form)).data,
+  photoBlob: async (workOrderId, photoId) => {
+    const response = await axiosInstance.get(`/work-orders/${workOrderId}/photos/${photoId}`, { responseType: "blob" });
+    return URL.createObjectURL(response.data);
+  },
   requestParts: async (id, payload) => (await axiosInstance.post(`/work-orders/${id}/part-requests`, payload)).data,
   issuePartsDirect: async (id, payload) => (await axiosInstance.post(`/work-orders/${id}/parts`, payload)).data,
   recordUsage: async (id, payload) => (await axiosInstance.post(`/work-orders/${id}/parts/usage`, payload)).data,
