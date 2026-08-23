@@ -5,6 +5,7 @@ import {
   Users,
   Landmark,
   ClipboardList,
+  Package,
   Settings2,
   Sparkles,
 } from "lucide-react";
@@ -37,6 +38,22 @@ export function useNavItems() {
         { title: t("sidebar_live_map", { defaultMessage: "Live Map" }), url: "/live-map", module: "live-map" },
         { title: t("sidebar_complaints", { defaultMessage: "Complaints" }), url: "/complaints", module: "complaints" },
         { title: t("sidebar_pm_schedules", { defaultMessage: "Preventive Maintenance" }), url: "/maintenance-schedules", module: "maintenance-schedules" },
+        { title: t("sidebar_reports", { defaultMessage: "Reports" }), url: "/reports", module: "reports" },
+        { title: t("sidebar_sla_report", { defaultMessage: "SLA report" }), url: "/reports/sla", module: "sla-report" },
+        { title: t("sidebar_notifications", { defaultMessage: "Notifications" }), url: "/notifications", module: "notifications" },
+        { title: t("sidebar_broadcasts", { defaultMessage: "Broadcasts" }), url: "/broadcasts", module: "broadcasts" },
+        { title: t("sidebar_checklists", { defaultMessage: "Daily checklists" }), url: "/checklists", module: "checklists" },
+      ],
+    },
+    {
+      title: t("sidebar_inventory", { defaultMessage: "Inventory" }),
+      url: "/inventory",
+      icon: Package,
+      module: "inventory",
+      items: [
+        { title: t("sidebar_parts", { defaultMessage: "Parts" }), url: "/inventory", module: "inventory" },
+        { title: t("sidebar_stock_logs", { defaultMessage: "Stock logs" }), url: "/inventory/stock", module: "inventory" },
+        { title: t("sidebar_purchase_requests", { defaultMessage: "Purchase requests" }), url: "/inventory/purchase-requests", module: "purchase-requests" },
       ],
     },
     {
@@ -46,6 +63,7 @@ export function useNavItems() {
       module: "properties",
       items: [
         { title: t("sidebar_properties", { defaultMessage: "Properties" }), url: "/properties", module: "properties" },
+        { title: t("sidebar_assets", { defaultMessage: "Assets" }), url: "/assets", module: "assets" },
         { title: t("sidebar_companies", { defaultMessage: "Companies" }), url: "/companies", module: "companies" },
       ],
     },
@@ -77,6 +95,11 @@ export function useNavItems() {
       module: "settings",
       items: [
         { title: t("sidebar_categories", { defaultMessage: "Categories" }), url: "/settings/categories", module: "categories" },
+        { title: t("sidebar_asset_categories", { defaultMessage: "Asset categories" }), url: "/settings/asset-categories", module: "asset-categories" },
+        { title: t("sidebar_part_categories", { defaultMessage: "Part categories" }), url: "/settings/part-categories", module: "part-categories" },
+        { title: t("sidebar_sla", { defaultMessage: "SLA policies" }), url: "/settings/sla", module: "sla" },
+        { title: t("sidebar_notification_settings", { defaultMessage: "Notification templates" }), url: "/settings/notifications", module: "notification-settings" },
+        { title: t("sidebar_checklist_settings", { defaultMessage: "Daily checklists" }), url: "/settings/checklists", module: "checklist-settings" },
         { title: t("sidebar_services", { defaultMessage: "Services" }), url: "/settings/services", module: "services" },
         { title: t("sidebar_wo_settings", { defaultMessage: "Complaint & WO Settings" }), url: "/settings/complaint-settings", module: "settings" },
         { title: t("sidebar_calendar", { defaultMessage: "Working Calendar" }), url: "/settings/working-calendar", module: "calendar" },

@@ -38,6 +38,7 @@ export const authOptions = {
               permissions: data.permissions || null,
               vendor: data.user.vendor || null,
               vendor_info: data.vendor_info || null,
+              language: data.user.language || "en",
             };
           }
           return null;
@@ -65,6 +66,7 @@ export const authOptions = {
         if (user.vendor_info) {
           token.vendor_info = user.vendor_info;
         }
+        token.language = user.language || "en";
       }
       if (trigger === "update" && session) {
         if (session.vendor_status !== undefined) {
@@ -72,6 +74,9 @@ export const authOptions = {
         }
         if (session.profile_completed !== undefined) {
           token.profile_completed = session.profile_completed;
+        }
+        if (session.language !== undefined) {
+          token.language = session.language;
         }
       }
       return token;
@@ -86,6 +91,7 @@ export const authOptions = {
       if (token.vendor_info) {
         session.user.vendor_info = token.vendor_info;
       }
+      session.user.language = token.language || "en";
       return session;
     },
   },

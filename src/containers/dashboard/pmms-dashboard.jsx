@@ -11,11 +11,12 @@ import {
   CreditCard,
   Landmark,
   LayoutDashboard,
+  Package,
+  Timer,
   MessageSquareWarning,
   PauseCircle,
   Radio,
   RefreshCw,
-  Timer,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -25,6 +26,10 @@ import EmptyState from "@/components/pmms/empty-state";
 import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import { Button } from "@/components/ui/button";
 import { dashboardApi } from "@/services/dashboard/dashboard-api";
+import { propertiesApi } from "@/services/properties/properties-api";
+import { complaintsApi } from "@/services/complaints/complaints-api";
+import { pmmsUsersApi } from "@/services/users/pmms-users-api";
+import OpsFilters from "@/components/pmms/ops-filters";
 import { apiError, formatDate, formatDay, labelize } from "@/lib/pmms";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
@@ -66,11 +71,19 @@ function ReportTable({ title, actionLabel, onAction, columns, rows, empty, onRow
               {rows.map((row) => (
                 <tr
                   key={row.id}
+                  tabIndex={onRow ? 0 : undefined}
+                  role={onRow ? "button" : undefined}
                   className={cn(
                     "border-b border-slate-100 last:border-0 dark:border-white/5",
                     onRow && "cursor-pointer hover:bg-violet-50/50 dark:hover:bg-white/5"
                   )}
                   onClick={onRow ? () => onRow(row) : undefined}
+                  onKeyDown={onRow ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onRow(row);
+                    }
+                  } : undefined}
                 >
                   {columns.map((column) => (
                     <td key={column.id} className="py-2.5 align-middle text-slate-700 dark:text-slate-200">
@@ -94,11 +107,17 @@ export default function PmmsDashboard() {
   const role = normalizeRole(session?.user?.role);
   const [payload, setPayload] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({});
+  const [properties, setProperties] = useState([]);
+  const [tree, setTree] = useState({ locations: [] });
+  const [categories, setCategories] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
 
-  const load = async () => {
+  const load = async (nextFilters = filters) => {
     setLoading(true);
     try {
-      const data = await dashboardApi.overview();
+      const params = Object.fromEntries(Object.entries(nextFilters || {}).filter(([, value]) => value));
+      const data = await dashboardApi.overview(params);
       setPayload(data && typeof data === "object" ? data : EMPTY);
     } catch (error) {
       toast.error(apiError(error, t("dash_load_failed", { defaultMessage: "Failed to load dashboard" })));
@@ -109,7 +128,18 @@ export default function PmmsDashboard() {
 
   useEffect(() => {
     load();
+    propertiesApi.list().then((data) => setProperties(Array.isArray(data) ? data : [])).catch(() => {});
+    complaintsApi.categories().then((data) => setCategories(Array.isArray(data) ? data : [])).catch(() => {});
+    pmmsUsersApi.list({ role: "technician" }).then((data) => setTechnicians(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!filters.property_id) {
+      setTree({ locations: [] });
+      return;
+    }
+    propertiesApi.tree(filters.property_id).then((data) => setTree(data || { locations: [] })).catch(() => setTree({ locations: [] }));
+  }, [filters.property_id]);
 
   const kpis = payload.kpis || {};
   const charts = payload.charts || {};
@@ -136,6 +166,9 @@ export default function PmmsDashboard() {
     if (kpis.trials_expiring_soon) items.push({ label: t("dash_alert_trials", { defaultMessage: "{count} trials ending", count: kpis.trials_expiring_soon }), href: "/trials" });
     if (kpis.subscriptions_expiring_soon) items.push({ label: t("dash_alert_subs", { defaultMessage: "{count} subscriptions ending", count: kpis.subscriptions_expiring_soon }), href: "/subscriptions" });
     if (kpis.pm_due_soon) items.push({ label: t("dash_alert_pm", { defaultMessage: "{count} PM due", count: kpis.pm_due_soon }), href: "/maintenance-schedules" });
+    if (kpis.low_stock_parts) items.push({ label: t("dash_alert_low_stock", { defaultMessage: "{count} low-stock parts", count: kpis.low_stock_parts }), href: "/inventory" });
+    if (kpis.sla_at_risk) items.push({ label: t("dash_alert_sla_risk", { defaultMessage: "{count} SLA at risk", count: kpis.sla_at_risk }), href: "/reports/sla" });
+    if (kpis.sla_breached) items.push({ label: t("dash_alert_sla_breach", { defaultMessage: "{count} SLA breached", count: kpis.sla_breached }), href: "/reports/sla" });
     return items;
   }, [kpis, t]);
 
@@ -152,6 +185,11 @@ export default function PmmsDashboard() {
     (isSuper || flags.company) && { title: t("dash_trials", { defaultMessage: "Active trials" }), value: kpis.active_trials ?? 0, hint: t("dash_hint_trials", { defaultMessage: "{count} ending in 14 days", count: kpis.trials_expiring_soon ?? 0 }), theme: "orange", icon: Timer, href: "/trials" },
     (isSuper || flags.company) && { title: t("dash_subscriptions", { defaultMessage: "Active subscriptions" }), value: kpis.active_subscriptions ?? 0, hint: t("dash_hint_subs", { defaultMessage: "{count} ending in 14 days", count: kpis.subscriptions_expiring_soon ?? 0 }), theme: "green", icon: CreditCard, href: "/subscriptions" },
     { title: t("dash_pm_due", { defaultMessage: "PM due soon" }), value: kpis.pm_due_soon ?? 0, hint: t("dash_hint_pm", { defaultMessage: "Next 7 days" }), theme: "indigo", icon: Wrench, href: "/maintenance-schedules" },
+    (isSuper || flags.company || role === Roles.SUPERVISOR || role === Roles.PROPERTY_MANAGER) && { title: t("dash_low_stock", { defaultMessage: "Low-stock parts" }), value: kpis.low_stock_parts ?? 0, hint: t("dash_hint_low_stock", { defaultMessage: "At or below minimum" }), theme: "rose", icon: Package, href: "/inventory" },
+    (isSuper || flags.company || role === Roles.SUPERVISOR || role === Roles.PROPERTY_MANAGER) && { title: t("dash_sla_risk", { defaultMessage: "SLA at risk" }), value: kpis.sla_at_risk ?? 0, hint: t("dash_hint_sla_breach", { defaultMessage: "{count} already breached", count: kpis.sla_breached ?? 0 }), theme: "amber", icon: Timer, href: "/reports/sla" },
+    { title: t("dash_pending", { defaultMessage: "Pending jobs" }), value: kpis.pending_work_orders ?? 0, hint: t("dash_hint_in_progress", { defaultMessage: "{count} in progress", count: kpis.in_progress_work_orders ?? 0 }), theme: "cyan", icon: ClipboardList, href: "/work-orders" },
+    { title: t("dash_completed", { defaultMessage: "Completed jobs" }), value: kpis.completed_work_orders ?? 0, hint: t("dash_hint_completed", { defaultMessage: "Completed, verified, or closed" }), theme: "green", icon: ClipboardList, href: "/work-orders" },
+    (isSuper || flags.company || role === Roles.SUPERVISOR || role === Roles.PROPERTY_MANAGER) && { title: t("dash_open_pr", { defaultMessage: "Open PRs" }), value: kpis.open_purchase_requests ?? 0, hint: t("dash_hint_open_pr", { defaultMessage: "Draft or submitted" }), theme: "violet", icon: Package, href: "/inventory/purchase-requests" },
   ].filter(Boolean);
 
   if (loading && !payload.generated_at) {
@@ -179,6 +217,20 @@ export default function PmmsDashboard() {
             {t("refresh", { defaultMessage: "Refresh" })}
           </Button>
         }
+      />
+
+      <OpsFilters
+        filters={filters}
+        setFilters={setFilters}
+        onApply={(next) => load(next || {})}
+        properties={properties}
+        locations={tree.locations || []}
+        subLocations={(tree.locations || []).flatMap((location) => location.sub_locations || location.subLocations || [])}
+        units={(tree.locations || []).flatMap((location) => (location.sub_locations || location.subLocations || []).flatMap((sub) => sub.units || []))}
+        categories={categories}
+        services={categories.find((row) => row.id === filters.category_id)?.services || []}
+        technicians={technicians}
+        statuses={["created", "assigned", "in_progress", "on_hold", "completed", "verified", "closed", "submitted"]}
       />
 
       {alerts.length > 0 && (
@@ -380,7 +432,66 @@ export default function PmmsDashboard() {
           onRow={() => router.push("/maintenance-schedules")}
           columns={[
             { id: "property", header: t("property", { defaultMessage: "Property" }), cell: (row) => row.property_name || "—" },
+            { id: "asset", header: t("asset", { defaultMessage: "Asset" }), cell: (row) => row.asset_name || row.asset_code || "—" },
             { id: "category", header: t("category", { defaultMessage: "Category" }), cell: (row) => row.category_name || "—" },
+            { id: "freq", header: t("frequency", { defaultMessage: "Frequency" }), cell: (row) => labelize(row.frequency) },
+            { id: "due", header: t("due", { defaultMessage: "Due" }), cell: (row) => (
+              <span className={row.is_overdue ? "font-semibold text-rose-600" : ""}>{formatDay(row.next_due_date)}</span>
+            ) },
+          ]}
+        />
+        <ReportTable
+          title={t("dash_table_sla", { defaultMessage: "SLA needing attention" })}
+          actionLabel={t("view_all", { defaultMessage: "View all" })}
+          onAction={() => router.push("/reports/sla")}
+          empty={t("dash_empty_sla", { defaultMessage: "No SLA clocks are at risk or breached." })}
+          rows={tables.sla_attention || []}
+          onRow={(row) => row?.id && router.push(`/work-orders/${row.id}`)}
+          columns={[
+            { id: "no", header: t("work_order", { defaultMessage: "Work order" }), cell: (row) => row.work_order_no || "—" },
+            { id: "property", header: t("property", { defaultMessage: "Property" }), cell: (row) => row.property_name || "—" },
+            { id: "overall", header: t("sla", { defaultMessage: "SLA" }), cell: (row) => <StatusBadge value={row.overall} /> },
+            { id: "resolution", header: t("resolution", { defaultMessage: "Resolution" }), cell: (row) => <StatusBadge value={row.resolution_status || "—"} /> },
+          ]}
+        />
+        <ReportTable
+          title={t("dash_table_tech", { defaultMessage: "Technician performance" })}
+          actionLabel={t("view_all", { defaultMessage: "View all" })}
+          onAction={() => router.push("/reports/technician_performance")}
+          empty={t("dash_empty_tech", { defaultMessage: "No technician assignments in this filter." })}
+          rows={tables.technician_performance || []}
+          columns={[
+            { id: "name", header: t("technician", { defaultMessage: "Technician" }), cell: (row) => row.name || "—" },
+            { id: "assigned", header: t("assigned", { defaultMessage: "Assigned" }), cell: (row) => row.assigned ?? 0 },
+            { id: "completed", header: t("completed", { defaultMessage: "Completed" }), cell: (row) => row.completed ?? 0 },
+            { id: "overdue", header: t("overdue", { defaultMessage: "Overdue" }), cell: (row) => row.overdue ?? 0 },
+          ]}
+        />
+        <ReportTable
+          title={t("dash_table_low_stock", { defaultMessage: "Low-stock parts" })}
+          actionLabel={t("view_all", { defaultMessage: "View all" })}
+          onAction={() => router.push("/inventory")}
+          empty={t("dash_empty_low_stock", { defaultMessage: "No parts are at or below minimum stock." })}
+          rows={tables.low_stock_parts || []}
+          onRow={(row) => row?.id && router.push(`/inventory/parts/${row.id}`)}
+          columns={[
+            { id: "name", header: t("part", { defaultMessage: "Part" }), cell: (row) => row.name || "—" },
+            { id: "sku", header: t("sku", { defaultMessage: "SKU" }), cell: (row) => row.sku || "—" },
+            { id: "on_hand", header: t("on_hand", { defaultMessage: "On hand" }), cell: (row) => row.on_hand ?? 0 },
+            { id: "min", header: t("min_stock", { defaultMessage: "Minimum" }), cell: (row) => row.minimum_stock ?? 0 },
+          ]}
+        />
+        <ReportTable
+          title={t("dash_table_asset_pm", { defaultMessage: "Asset maintenance due" })}
+          actionLabel={t("view_all", { defaultMessage: "View all" })}
+          onAction={() => router.push("/assets")}
+          empty={t("dash_empty_asset_pm", { defaultMessage: "No asset maintenance due in the next 7 days." })}
+          rows={tables.asset_pm_due || []}
+          onRow={(row) => row?.id && router.push(`/assets/${row.id}`)}
+          columns={[
+            { id: "asset", header: t("asset", { defaultMessage: "Asset" }), cell: (row) => row.asset_name || "—" },
+            { id: "code", header: t("code", { defaultMessage: "Code" }), cell: (row) => row.asset_code || "—" },
+            { id: "property", header: t("property", { defaultMessage: "Property" }), cell: (row) => row.property_name || "—" },
             { id: "freq", header: t("frequency", { defaultMessage: "Frequency" }), cell: (row) => labelize(row.frequency) },
             { id: "due", header: t("due", { defaultMessage: "Due" }), cell: (row) => (
               <span className={row.is_overdue ? "font-semibold text-rose-600" : ""}>{formatDay(row.next_due_date)}</span>

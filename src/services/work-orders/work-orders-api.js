@@ -41,4 +41,7 @@ export const workOrdersApi = {
   issuePartsDirect: async (id, payload) => (await axiosInstance.post(`/work-orders/${id}/parts`, payload)).data,
   recordUsage: async (id, payload) => (await axiosInstance.post(`/work-orders/${id}/parts/usage`, payload)).data,
   issuePartRequest: async (requestId, payload) => (await axiosInstance.post(`/part-requests/${requestId}/issue`, payload)).data,
+  approvePartRequest: async (requestId, payload = {}) => (await axiosInstance.post(`/part-requests/${requestId}/approve`, payload)).data,
+  rejectPartRequest: async (requestId, reason) => (await axiosInstance.post(`/part-requests/${requestId}/reject`, { reason })).data,
+  returnPartRequest: async (requestId, payload) => (await axiosInstance.post(`/part-requests/${requestId}/return`, payload)).data,
 };

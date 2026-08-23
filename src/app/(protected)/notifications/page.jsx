@@ -1,13 +1,15 @@
+"use client";
+
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
-import NotificationComponent from "@/containers/notifications/notification";
+import NotificationInboxPage from "@/containers/notifications/inbox-page";
+import { useT } from "@/lib/use-t";
 
-export default function NotificationsPage() {
-  const breadcrumbData = [{ name: "Notifications", url: "/notifications" }];
-
+export default function NotificationsRoute() {
+  const t = useT("common");
   return (
-    <>
-      <BreadcrumbComponent data={breadcrumbData} />
-      <NotificationComponent />
-    </>
+    <div className="space-y-6">
+      <BreadcrumbComponent data={[{ name: t("notifications", { defaultMessage: "Notifications" }), url: "/notifications" }]} />
+      <NotificationInboxPage />
+    </div>
   );
 }

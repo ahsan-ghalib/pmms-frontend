@@ -34,6 +34,7 @@ import {
 import { maintenanceApi } from "@/services/settings/settings-api";
 import { propertiesApi } from "@/services/properties/properties-api";
 import { complaintsApi } from "@/services/complaints/complaints-api";
+import { assetsApi } from "@/services/assets/assets-api";
 import { apiError, formatDay, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { useLocaleContext } from "@/providers/locale-provider";
@@ -88,6 +89,7 @@ export default function MaintenanceSchedules() {
 
   const [rows, setRows] = useState([]);
   const [properties, setProperties] = useState([]);
+  const [assets, setAssets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -100,9 +102,10 @@ export default function MaintenanceSchedules() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const { control, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm({
-    defaultValues: { property_id: "", category_id: "", service_id: "", frequency: "monthly", next_due_date: "" },
+    defaultValues: { property_id: "", asset_id: "", category_id: "", service_id: "", frequency: "monthly", next_due_date: "" },
   });
   const categoryId = watch("category_id");
+  const propertyId = watch("property_id");
   const services = categories.find((category) => category.id === categoryId)?.services || [];
 
   const load = async () => {
@@ -122,6 +125,14 @@ export default function MaintenanceSchedules() {
     propertiesApi.list().then((data) => setProperties(Array.isArray(data) ? data : [])).catch(() => {});
     complaintsApi.categories().then((data) => setCategories(Array.isArray(data) ? data : [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!propertyId) {
+      setAssets([]);
+      return;
+    }
+    assetsApi.list({ property_id: propertyId }).then((data) => setAssets(Array.isArray(data) ? data.filter((row) => row.status !== "disposed") : [])).catch(() => setAssets([]));
+  }, [propertyId]);
 
   const freqLabel = (value) => {
     const match = FREQUENCIES.find((item) => item.value === value);
@@ -209,7 +220,7 @@ export default function MaintenanceSchedules() {
           </div>
           <div>
             <p className="font-semibold text-slate-900 dark:text-white">{row.original.property?.name || "—"}</p>
-            <p className="text-xs text-slate-500">{row.original.property?.code || t("pm_no_code", { defaultMessage: "No property code" })}</p>
+            <p className="text-xs text-slate-500">{row.original.asset?.name || row.original.property?.code || t("pm_no_code", { defaultMessage: "No property code" })}</p>
           </div>
         </div>
       ),
@@ -362,7 +373,7 @@ export default function MaintenanceSchedules() {
           <form
             onSubmit={handleSubmit(async (values) => {
               try {
-                await maintenanceApi.create(values);
+                await maintenanceApi.create({ ...values, asset_id: values.asset_id || undefined });
                 toast.success(t("pm_created", { defaultMessage: "Schedule created" }));
                 reset();
                 setCreateOpen(false);
@@ -381,6 +392,15 @@ export default function MaintenanceSchedules() {
                 errors={errors}
                 validation={{ required: t("required", { defaultMessage: "Required" }) }}
                 options={properties.map((item) => ({ value: item.id, label: item.name }))}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <SelectField
+                label={t("asset", { defaultMessage: "Asset" })}
+                name="asset_id"
+                control={control}
+                errors={errors}
+                options={assets.map((item) => ({ value: item.id, label: `${item.asset_code} · ${item.name}` }))}
               />
             </div>
             <SelectField

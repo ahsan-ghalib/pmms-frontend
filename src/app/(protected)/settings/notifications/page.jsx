@@ -1,10 +1,18 @@
-import UnderMaintenance from "@/components/common/under-maintenance";
+"use client";
 
-export default function NotificationsPage() {
+import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import NotificationSettingsPage from "@/containers/settings/notification-settings-page";
+import { useT } from "@/lib/use-t";
+
+export default function NotificationSettingsRoute() {
+  const t = useT("common");
   return (
-    <UnderMaintenance
-      title="Notifications"
-      description="Notifications management is under development. Soon you'll be able to configure email notifications, alerts, and system messages."
-    />
+    <div className="space-y-6">
+      <BreadcrumbComponent data={[
+        { name: t("settings", { defaultMessage: "Settings" }), url: "/settings/categories" },
+        { name: t("notifications", { defaultMessage: "Notifications" }), url: "/settings/notifications" },
+      ]} />
+      <NotificationSettingsPage />
+    </div>
   );
 }

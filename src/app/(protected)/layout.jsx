@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 import LogoutButton from "@/components/layouts/logout";
 import { PermissionsInitializer } from "@/components/layouts/permissions-initializer";
 import { LanguageToggle } from "@/components/layouts/language-toggle";
+import SessionLocaleSync from "@/components/layouts/session-locale-sync";
 import { AppHeaderTitle } from "@/components/layouts/app-header-title";
 import { SocketIndicator } from "@/components/layouts/socket-indicator";
 import { ThemeToggle } from "@/components/layouts/theme-toggle";
@@ -20,8 +21,12 @@ export default async function ProtectedLayout({ children }) {
   return (
     <RouteProtection>
       <PermissionsInitializer />
+      <SessionLocaleSync />
       <AuthAndPermissionWrapper>
         <div className="admin-shell">
+          <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-3 focus:rounded-md focus:bg-white focus:px-3 focus:py-2">
+            Skip to main content
+          </a>
           <SidebarProvider>
             <AppSidebar />
             <SidebarInset className="admin-main min-w-0">
@@ -38,7 +43,7 @@ export default async function ProtectedLayout({ children }) {
                 </div>
               </header>
 
-              <div className="admin-content flex flex-1 flex-col px-4 py-4 md:px-6 md:py-5 min-w-0 w-full overflow-x-hidden">
+              <div id="main-content" tabIndex={-1} className="admin-content flex flex-1 flex-col px-4 py-4 md:px-6 md:py-5 min-w-0 w-full overflow-x-hidden">
                 <DutyTrackingProvider>
                   {children}
                 </DutyTrackingProvider>

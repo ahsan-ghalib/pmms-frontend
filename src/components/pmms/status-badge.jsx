@@ -35,6 +35,23 @@ const STATUS_STYLES = {
   subscription: "bg-blue-100 text-blue-800 border-blue-200",
   no_access: "bg-rose-100 text-rose-800 border-rose-200",
   blocked: "bg-rose-100 text-rose-800 border-rose-200",
+  under_maintenance: "bg-amber-100 text-amber-800 border-amber-200",
+  "under repair": "bg-amber-100 text-amber-800 border-amber-200",
+  disposed: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  on_track: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  "on track": "bg-emerald-100 text-emerald-800 border-emerald-200",
+  at_risk: "bg-amber-100 text-amber-800 border-amber-200",
+  "at risk": "bg-amber-100 text-amber-800 border-amber-200",
+  breached: "bg-rose-100 text-rose-800 border-rose-200",
+  paused: "bg-slate-100 text-slate-700 border-slate-200",
+  unread: "bg-violet-100 text-violet-800 border-violet-200",
+  read: "bg-slate-100 text-slate-600 border-slate-200",
+  scheduled: "bg-amber-100 text-amber-800 border-amber-200",
+  sent: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  queued: "bg-slate-100 text-slate-700 border-slate-200",
+  pass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  fail: "bg-rose-100 text-rose-800 border-rose-200",
+  "business calendar": "bg-violet-100 text-violet-800 border-violet-200",
 };
 
 const PRIORITY_STYLES = {

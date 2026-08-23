@@ -168,10 +168,15 @@ export default function DutyPage() {
         title={t("duty_title", { defaultMessage: "Duty & my jobs" })}
         description={t("duty_desc", { defaultMessage: "Turn duty on to receive jobs and share your live location." })}
         actions={
-          <Button variant="outline" className="rounded-full" onClick={load} disabled={loading || busy}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-            {t("refresh", { defaultMessage: "Refresh" })}
-          </Button>
+          <>
+            <Button variant="outline" className="rounded-full" onClick={() => router.push("/checklists")}>
+              {t("daily_checklists", { defaultMessage: "Daily checklists" })}
+            </Button>
+            <Button variant="outline" className="rounded-full" onClick={load} disabled={loading || busy}>
+              <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+              {t("refresh", { defaultMessage: "Refresh" })}
+            </Button>
+          </>
         }
       />
 

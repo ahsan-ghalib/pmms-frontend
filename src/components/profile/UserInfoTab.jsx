@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axios";
+import { persistLocale } from "@/lib/locale-utils";
 import { Loader2 } from "lucide-react";
 
 export default function UserInfoTab({ user }) {
@@ -16,6 +17,7 @@ export default function UserInfoTab({ user }) {
     email: user?.email || "",
     phone: user?.phone || "",
     dial_code: user?.dial_code || "",
+    language: user?.language || "en",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -33,10 +35,11 @@ export default function UserInfoTab({ user }) {
     try {
       const res = await axiosInstance.get("/user");
       setFormData({
-        name: res.data.name || "",
-        email: res.data.email || "",
-        phone: res.data.phone || "",
-        dial_code: res.data.dial_code || "",
+        name: res.data.data?.name || res.data.name || "",
+        email: res.data.data?.email || res.data.email || "",
+        phone: res.data.data?.phone || res.data.phone || "",
+        dial_code: res.data.data?.dial_code || res.data.dial_code || "",
+        language: res.data.data?.language || res.data.language || "en",
       });
     } catch (error) {
       console.error(error);
@@ -55,8 +58,9 @@ export default function UserInfoTab({ user }) {
     setIsLoading(true);
     try {
       const res = await axiosInstance.put("/user/profile", formData);
+      if (formData.language) persistLocale(formData.language);
       toast.success(res.data.message || "Profile updated successfully");
-      update(); // Update next-auth session if needed
+      await update({ language: formData.language });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
@@ -105,6 +109,13 @@ export default function UserInfoTab({ user }) {
             <div className="space-y-2">
               <Label>Phone</Label>
               <Input name="phone" value={formData.phone} onChange={handleChange} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="language">Language</Label>
+              <select id="language" name="language" className="h-10 w-full rounded-md border px-3 text-sm" value={formData.language} onChange={handleChange}>
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+              </select>
             </div>
           </div>
           <Button onClick={handleSaveProfile} disabled={isLoading}>

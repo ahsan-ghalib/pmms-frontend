@@ -8,8 +8,8 @@ export default function PageHeader({ icon: Icon, title, description, actions, ac
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           {Icon && (
-            <Button variant="default" size="icon" className={`h-11 w-11 rounded-xl shadow-sm ${accent}`}>
-              <Icon className="h-5 w-5 text-white" />
+            <Button variant="default" size="icon" aria-hidden="true" tabIndex={-1} className={`h-11 w-11 rounded-xl shadow-sm ${accent}`}>
+              <Icon className="h-5 w-5 text-white" aria-hidden="true" />
             </Button>
           )}
           <div>
