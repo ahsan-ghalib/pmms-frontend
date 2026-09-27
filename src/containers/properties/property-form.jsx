@@ -49,12 +49,14 @@ export default function PropertyForm({ property }) {
       contact_email: property?.contact?.email || "",
       latitude: property?.latitude ?? "",
       longitude: property?.longitude ?? "",
-      "address.line_1": property?.address?.line_1 || "",
-      "address.line_2": property?.address?.line_2 || "",
-      "address.city": property?.address?.city || "",
-      "address.state": property?.address?.state || "",
-      "address.country": property?.address?.country || "Qatar",
-      "address.postal_code": property?.address?.postal_code || "",
+      address: {
+        line_1: property?.address?.line_1 || "",
+        line_2: property?.address?.line_2 || "",
+        city: property?.address?.city || "",
+        state: property?.address?.state || "",
+        country: property?.address?.country || "Qatar",
+        postal_code: property?.address?.postal_code || "",
+      },
     },
   });
 
@@ -75,6 +77,7 @@ export default function PropertyForm({ property }) {
   }, [isSuper]);
 
   const onSubmit = async (values) => {
+    const address = values.address || {};
     const payload = {
       company_id: values.company_id || undefined,
       name: values.name,
@@ -88,12 +91,12 @@ export default function PropertyForm({ property }) {
       latitude: values.latitude === "" || values.latitude == null ? null : Number(values.latitude),
       longitude: values.longitude === "" || values.longitude == null ? null : Number(values.longitude),
       address: {
-        line_1: values["address.line_1"],
-        line_2: values["address.line_2"] || null,
-        city: values["address.city"] || null,
-        state: values["address.state"] || null,
-        country: values["address.country"] || null,
-        postal_code: values["address.postal_code"] || null,
+        line_1: (address.line_1 || "").trim(),
+        line_2: address.line_2?.trim() || null,
+        city: address.city?.trim() || null,
+        state: address.state?.trim() || null,
+        country: address.country?.trim() || null,
+        postal_code: address.postal_code?.trim() || null,
       },
     };
 

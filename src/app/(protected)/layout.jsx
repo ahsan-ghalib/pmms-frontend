@@ -15,6 +15,8 @@ import { AppHeaderTitle } from "@/components/layouts/app-header-title";
 import { SocketIndicator } from "@/components/layouts/socket-indicator";
 import { ThemeToggle } from "@/components/layouts/theme-toggle";
 import DutyTrackingProvider from "@/components/technicians/duty-tracking-provider";
+import PlanAccessGuard from "@/components/layouts/plan-access-guard";
+import { PoweredByEmara } from "@/components/layouts/sidebar-brand";
 import "../admin-glass.css";
 
 export default async function ProtectedLayout({ children }) {
@@ -45,8 +47,13 @@ export default async function ProtectedLayout({ children }) {
 
               <div id="main-content" tabIndex={-1} className="admin-content flex flex-1 flex-col px-4 py-4 md:px-6 md:py-5 min-w-0 w-full overflow-x-hidden">
                 <DutyTrackingProvider>
-                  {children}
+                  <PlanAccessGuard>
+                    {children}
+                  </PlanAccessGuard>
                 </DutyTrackingProvider>
+                <footer className="mt-auto pt-6">
+                  <PoweredByEmara />
+                </footer>
                 <Toaster position="top-right" />
               </div>
             </SidebarInset>

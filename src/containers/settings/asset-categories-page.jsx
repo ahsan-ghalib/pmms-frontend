@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Layers3, Plus } from "lucide-react";
+import { Layers3, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from "@/components/pmms/page-header";
 import StatCard from "@/components/common/stat-card";
 import { StatusBadge } from "@/components/pmms/status-badge";
@@ -23,6 +24,9 @@ export default function AssetCategoriesPage() {
   const [filter, setFilter] = useState("all");
   const [form, setForm] = useState({ name_en: "", name_ar: "", company_id: "" });
   const [subForm, setSubForm] = useState({ category_id: "", name_en: "", name_ar: "" });
+  const [editCategory, setEditCategory] = useState(null);
+  const [editSubcategory, setEditSubcategory] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     try {
@@ -62,6 +66,24 @@ export default function AssetCategoriesPage() {
     }
   };
 
+  const saveCategory = async () => {
+    if (!editCategory?.name_en) return;
+    setSaving(true);
+    try {
+      await assetsApi.updateCategory(editCategory.id, {
+        name_en: editCategory.name_en,
+        name_ar: editCategory.name_ar || editCategory.name_en,
+      });
+      toast.success(t("category_updated", { defaultMessage: "Category updated" }));
+      setEditCategory(null);
+      await load();
+    } catch (error) {
+      toast.error(apiError(error, t("category_save_failed", { defaultMessage: "Unable to save category" })));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleStatus = async (row) => {
     try {
       await assetsApi.updateCategory(row.id, { status: row.status === "active" ? "inactive" : "active" });
@@ -79,6 +101,25 @@ export default function AssetCategoriesPage() {
       await load();
     } catch (error) {
       toast.error(apiError(error, t("category_save_failed", { defaultMessage: "Unable to save subcategory" })));
+    }
+  };
+
+  const saveSubcategory = async () => {
+    if (!editSubcategory?.name_en || !editSubcategory?.category_id) return;
+    setSaving(true);
+    try {
+      await assetsApi.updateSubcategory(editSubcategory.id, {
+        category_id: editSubcategory.category_id,
+        name_en: editSubcategory.name_en,
+        name_ar: editSubcategory.name_ar || editSubcategory.name_en,
+      });
+      toast.success(t("subcategory_updated", { defaultMessage: "Subcategory updated" }));
+      setEditSubcategory(null);
+      await load();
+    } catch (error) {
+      toast.error(apiError(error, t("category_save_failed", { defaultMessage: "Unable to save subcategory" })));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -158,27 +199,126 @@ export default function AssetCategoriesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge value={row.status} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditCategory({ id: row.id, name_en: row.name_en || "", name_ar: row.name_ar || "" })}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => toggleStatus(row)}>
                   {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
                 </Button>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 space-y-2">
               {(row.subcategories || []).map((sub) => (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => toggleSub(sub)}
-                  className="rounded-full border px-3 py-1 text-xs"
-                >
-                  {sub.name_en} · {sub.status}
-                </button>
+                <div key={sub.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/70 px-3 py-2 dark:border-white/10">
+                  <div>
+                    <p className="text-sm font-medium">{sub.name_en}</p>
+                    {sub.name_ar ? <p className="text-xs text-slate-500">{sub.name_ar}</p> : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge value={sub.status} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditSubcategory({
+                        id: sub.id,
+                        category_id: sub.category_id || row.id,
+                        name_en: sub.name_en || "",
+                        name_ar: sub.name_ar || "",
+                      })}
+                    >
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => toggleSub(sub)}>
+                      {sub.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
+                    </Button>
+                  </div>
+                </div>
               ))}
               {(row.subcategories || []).length === 0 && <p className="text-xs text-slate-500">{t("no_subcategories", { defaultMessage: "No subcategories yet." })}</p>}
             </div>
           </article>
         ))}
       </div>
+
+      <Dialog open={!!editCategory} onOpenChange={(open) => !open && setEditCategory(null)}>
+        <DialogContent className="rounded-3xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("edit_category", { defaultMessage: "Edit category" })}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block space-y-1 text-sm">
+              <span>{t("name_en", { defaultMessage: "English name" })}</span>
+              <input
+                className="w-full rounded-lg border bg-transparent px-3 py-2"
+                value={editCategory?.name_en || ""}
+                onChange={(event) => setEditCategory((prev) => ({ ...prev, name_en: event.target.value }))}
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>{t("name_ar", { defaultMessage: "Arabic name" })}</span>
+              <input
+                className="w-full rounded-lg border bg-transparent px-3 py-2"
+                value={editCategory?.name_ar || ""}
+                onChange={(event) => setEditCategory((prev) => ({ ...prev, name_ar: event.target.value }))}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCategory(null)}>{t("cancel", { defaultMessage: "Cancel" })}</Button>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={saving || !editCategory?.name_en} onClick={saveCategory}>
+              {t("save_changes", { defaultMessage: "Save changes" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editSubcategory} onOpenChange={(open) => !open && setEditSubcategory(null)}>
+        <DialogContent className="rounded-3xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("edit_subcategory", { defaultMessage: "Edit subcategory" })}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block space-y-1 text-sm">
+              <span>{t("parent_category", { defaultMessage: "Parent category" })}</span>
+              <select
+                className="w-full rounded-lg border bg-transparent px-3 py-2"
+                value={editSubcategory?.category_id || ""}
+                onChange={(event) => setEditSubcategory((prev) => ({ ...prev, category_id: event.target.value }))}
+              >
+                {rows.map((row) => (
+                  <option key={row.id} value={row.id}>{row.name_en}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>{t("name_en", { defaultMessage: "English name" })}</span>
+              <input
+                className="w-full rounded-lg border bg-transparent px-3 py-2"
+                value={editSubcategory?.name_en || ""}
+                onChange={(event) => setEditSubcategory((prev) => ({ ...prev, name_en: event.target.value }))}
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>{t("name_ar", { defaultMessage: "Arabic name" })}</span>
+              <input
+                className="w-full rounded-lg border bg-transparent px-3 py-2"
+                value={editSubcategory?.name_ar || ""}
+                onChange={(event) => setEditSubcategory((prev) => ({ ...prev, name_ar: event.target.value }))}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSubcategory(null)}>{t("cancel", { defaultMessage: "Cancel" })}</Button>
+            <Button className="bg-violet-600 hover:bg-violet-700" disabled={saving || !editSubcategory?.name_en} onClick={saveSubcategory}>
+              {t("save_changes", { defaultMessage: "Save changes" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { companiesApi } from "@/services/companies/companies-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import ExpiryCountdown from "@/components/pmms/expiry-countdown";
 
 export default function CompanyDetails() {
   const { id } = useParams();
@@ -53,6 +54,32 @@ export default function CompanyDetails() {
             )}
           </>
         }
+      />
+
+      <div className="glass-panel flex flex-wrap items-center gap-4 rounded-2xl p-5">
+        {company.logo_url ? (
+          <img src={company.logo_url} alt={company.name} className="h-16 w-16 rounded-xl border border-slate-200 bg-white object-contain dark:border-white/10" />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-violet-600 text-lg font-bold text-white">
+            {String(company.name || "CO").slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-300">
+            {t("company_logo", { defaultMessage: "Company logo" })}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            {company.logo_url
+              ? t("logo_used_on_portal", { defaultMessage: "This mark is used on the company dashboard and portal." })
+              : t("no_logo_uploaded", { defaultMessage: "No logo uploaded yet." })}
+          </p>
+        </div>
+      </div>
+
+      <ExpiryCountdown
+        access={company.entitlements?.access || company.access}
+        planName={company.entitlements?.plan_name || company.plan_name}
+        expiresAt={company.entitlements?.expires_at || company.active_subscription?.ends_at || company.active_trial?.expires_at}
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

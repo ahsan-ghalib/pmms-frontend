@@ -12,6 +12,7 @@ import {
   Package,
   Save,
   SlidersHorizontal,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ const DEFAULTS = {
   duplicate_complaint_rule: "warn",
   work_order_reopen_enabled: true,
   force_assignment: false,
+  auto_technician_assignment: false,
+  nearest_technician: false,
   max_hold_count: "",
   require_before_photos: true,
   require_after_photos: true,
@@ -52,7 +55,8 @@ const DEFAULTS = {
 
 const GROUPS = [
   { id: "intake", icon: MessageSquareWarning, keys: ["duplicate_complaint_rule"] },
-  { id: "lifecycle", icon: ClipboardList, keys: ["work_order_reopen_enabled", "force_assignment", "max_hold_count", "sla_pauses_on_hold", "allow_close_without_verify", "rating_window_hours"] },
+  { id: "assignment", icon: UserCog, keys: ["auto_technician_assignment", "nearest_technician", "force_assignment"] },
+  { id: "lifecycle", icon: ClipboardList, keys: ["work_order_reopen_enabled", "max_hold_count", "sla_pauses_on_hold", "allow_close_without_verify", "rating_window_hours"] },
   { id: "evidence", icon: Camera, keys: ["require_before_photos", "require_after_photos", "require_parts_on_complete"] },
   { id: "field", icon: MapPin, keys: ["require_gps_checkin", "require_gps_checkout", "require_asset_scan_to_start", "tracking_interval_seconds"] },
   { id: "stock", icon: Package, keys: ["allow_negative_stock"] },
@@ -65,6 +69,8 @@ const SETTINGS = {
   tracking_interval_seconds: { type: "integer", min: 30, max: 60, unit: "sec" },
   work_order_reopen_enabled: { type: "boolean" },
   force_assignment: { type: "boolean" },
+  auto_technician_assignment: { type: "boolean" },
+  nearest_technician: { type: "boolean" },
   require_before_photos: { type: "boolean" },
   require_after_photos: { type: "boolean" },
   require_parts_on_complete: { type: "boolean" },

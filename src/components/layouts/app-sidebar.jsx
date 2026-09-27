@@ -18,7 +18,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { SidebarBrand, NavDashboard } from "@/components/layouts/sidebar-brand";
+import { SidebarBrand, NavDashboard, PoweredByEmara } from "@/components/layouts/sidebar-brand";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/use-t";
 import { canSeeModule } from "@/lib/permissions/role-access";
@@ -86,6 +86,7 @@ export function useNavItems() {
       module: "users",
       items: [
         { title: t("sidebar_users", { defaultMessage: "Users" }), url: "/users", module: "users" },
+        { title: t("sidebar_tenants", { defaultMessage: "Tenants" }), url: "/tenants", module: "tenants" },
       ],
     },
     {
@@ -157,6 +158,7 @@ export function AppSidebar({ ...props }) {
       </SidebarContent>
       <SidebarFooter className="sidebar-user-card">
         <NavUser user={user} status={status} />
+        <PoweredByEmara compact />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

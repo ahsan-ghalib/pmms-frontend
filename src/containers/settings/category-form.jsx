@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SelectField, TextField } from "@/components/form-fields";
+import { SelectField, SwitchField, TextField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { companiesApi } from "@/services/companies/companies-api";
@@ -29,6 +29,7 @@ export default function CategoryForm({ category }) {
       capacity: category?.capacity ?? 5,
       reopen_window_hours: category?.reopen_window_hours ?? "",
       status: category?.status || "active",
+      visible_to_tenant: category?.visible_to_tenant ?? true,
       company_id: category?.company_id || undefined,
     },
   });
@@ -98,6 +99,15 @@ export default function CategoryForm({ category }) {
             { value: "inactive", label: t("inactive", { defaultMessage: "Inactive" }) },
           ]}
         />
+        <div className="md:col-span-2">
+          <SwitchField
+            label={t("visible_to_tenant", { defaultMessage: "Visible to Tenant" })}
+            description={t("visible_to_tenant_desc", { defaultMessage: "When disabled, tenants cannot select this category." })}
+            name="visible_to_tenant"
+            control={control}
+            errors={errors}
+          />
+        </div>
         <div className="md:col-span-2">
           <TextField label={t("description", { defaultMessage: "Description" })} name="description" control={control} errors={errors} />
         </div>

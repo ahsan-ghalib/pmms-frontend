@@ -35,6 +35,10 @@ import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
 import { CategoryBars, SimpleBars, StatusDonut, VolumeChart } from "@/containers/dashboard/dashboard-charts";
+import ExpiryCountdown from "@/components/pmms/expiry-countdown";
+import PlanFeatureGrid from "@/containers/dashboard/plan-feature-grid";
+import { usePlanAccess } from "@/hooks/use-plan-access";
+import { featureForPath } from "@/lib/permissions/plan-features";
 
 const EMPTY = {
   scope: "assigned",
@@ -105,6 +109,7 @@ export default function PmmsDashboard() {
   const router = useRouter();
   const { data: session } = useSession();
   const role = normalizeRole(session?.user?.role);
+  const { canUsePath, warnLocked } = usePlanAccess();
   const [payload, setPayload] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({});
@@ -145,6 +150,8 @@ export default function PmmsDashboard() {
   const charts = payload.charts || {};
   const tables = payload.tables || {};
   const flags = payload.flags || {};
+  const entitlements = payload.entitlements || session?.user?.entitlements || {};
+  const modules = payload.modules || [];
   const isSuper = flags.platform || role === Roles.SUPER_ADMIN;
 
   const title = isSuper
@@ -219,6 +226,14 @@ export default function PmmsDashboard() {
         }
       />
 
+      {!isSuper && (
+        <ExpiryCountdown
+          access={entitlements.access}
+          planName={entitlements.plan_name}
+          expiresAt={entitlements.expires_at}
+        />
+      )}
+
       <OpsFilters
         filters={filters}
         setFilters={setFilters}
@@ -260,10 +275,18 @@ export default function PmmsDashboard() {
             hint={card.hint}
             theme={card.theme}
             icon={card.icon}
-            onClick={card.href ? () => router.push(card.href) : undefined}
+            onClick={card.href ? () => {
+              if (featureForPath(card.href) && !canUsePath(card.href)) {
+                warnLocked();
+                return;
+              }
+              router.push(card.href);
+            } : undefined}
           />
         ))}
       </div>
+
+      {!isSuper && <PlanFeatureGrid groups={modules} />}
 
       <div className="grid gap-4 md:grid-cols-3">
         <VolumeChart data={charts.volume_14d} />

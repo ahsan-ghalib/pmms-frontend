@@ -39,6 +39,8 @@ export const authOptions = {
               vendor: data.user.vendor || null,
               vendor_info: data.vendor_info || null,
               language: data.user.language || "en",
+              company: data.company || null,
+              entitlements: data.entitlements || null,
             };
           }
           return null;
@@ -67,6 +69,8 @@ export const authOptions = {
           token.vendor_info = user.vendor_info;
         }
         token.language = user.language || "en";
+        token.company = user.company || null;
+        token.entitlements = user.entitlements || null;
       }
       if (trigger === "update" && session) {
         if (session.vendor_status !== undefined) {
@@ -77,6 +81,12 @@ export const authOptions = {
         }
         if (session.language !== undefined) {
           token.language = session.language;
+        }
+        if (session.company !== undefined) {
+          token.company = session.company;
+        }
+        if (session.entitlements !== undefined) {
+          token.entitlements = session.entitlements;
         }
       }
       return token;
@@ -92,6 +102,8 @@ export const authOptions = {
         session.user.vendor_info = token.vendor_info;
       }
       session.user.language = token.language || "en";
+      session.user.company = token.company || null;
+      session.user.entitlements = token.entitlements || null;
       return session;
     },
   },

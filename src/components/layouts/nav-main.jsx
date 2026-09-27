@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/use-t";
+import { usePlanAccess } from "@/hooks/use-plan-access";
 
 import {
   SidebarGroup,
@@ -41,6 +42,7 @@ function isGroupActive(pathname, item) {
 export function NavMain({ items }) {
   const pathname = usePathname();
   const t = useT("common");
+  const { canUseModule, warnLocked } = usePlanAccess();
 
   return (
     <SidebarGroup className="px-2 py-0">
@@ -73,17 +75,33 @@ export function NavMain({ items }) {
                   <SidebarMenuSub className="sidebar-sub">
                     {item.items?.map((subItem) => {
                       const subActive = isPathActive(pathname, subItem.url);
+                      const locked = subItem.module && !canUseModule(subItem.module);
 
                       return (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton
-                            asChild
-                            className={cn(subActive && "nav-sub-active")}
+                            asChild={!locked}
+                            className={cn(
+                              subActive && "nav-sub-active",
+                              locked && "cursor-not-allowed opacity-50 grayscale"
+                            )}
+                            onClick={locked ? (event) => {
+                              event.preventDefault();
+                              warnLocked();
+                            } : undefined}
                           >
-                            <Link href={subItem.url}>
-                              <span className="sidebar-sub-dot" aria-hidden />
-                              <span className="truncate">{subItem.title}</span>
-                            </Link>
+                            {locked ? (
+                              <span className="flex w-full items-center gap-2">
+                                <span className="sidebar-sub-dot" aria-hidden />
+                                <span className="truncate">{subItem.title}</span>
+                                <Lock className="ms-auto h-3 w-3 shrink-0" />
+                              </span>
+                            ) : (
+                              <Link href={subItem.url}>
+                                <span className="sidebar-sub-dot" aria-hidden />
+                                <span className="truncate">{subItem.title}</span>
+                              </Link>
+                            )}
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       );

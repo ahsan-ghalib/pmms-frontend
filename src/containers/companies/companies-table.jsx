@@ -75,9 +75,18 @@ export default function CompaniesTable() {
       accessorKey: "name",
       header: t("company", { defaultMessage: "Company" }),
       cell: ({ row }) => (
-        <div>
-          <p className="font-semibold text-slate-900 dark:text-white">{row.original.name}</p>
-          <p className="font-mono text-xs text-slate-500">{row.original.code}</p>
+        <div className="flex items-center gap-3">
+          {row.original.logo_url ? (
+            <img src={row.original.logo_url} alt="" className="h-9 w-9 rounded-lg border border-slate-200 bg-white object-contain dark:border-white/10" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-600 text-[10px] font-bold text-white">
+              {String(row.original.name || "CO").slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-white">{row.original.name}</p>
+            <p className="font-mono text-xs text-slate-500">{row.original.code}</p>
+          </div>
         </div>
       ),
     },

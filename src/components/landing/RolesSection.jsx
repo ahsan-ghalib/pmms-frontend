@@ -1,5 +1,4 @@
 const roles = [
-  { ar: "مدير المنصة", en: "Super admin", arBody: "يدير الشركات والإعدادات العامة.", enBody: "Owns companies and platform settings." },
   { ar: "مدير الشركة", en: "Company admin", arBody: "يدير العقارات والمستخدمين والسياسات.", enBody: "Manages properties, users, and policies." },
   { ar: "مدير العقار", en: "Property manager", arBody: "يشرف على المواقع والشكاوى والتحقق.", enBody: "Oversees sites, complaints, and verification." },
   { ar: "مشرف", en: "Supervisor", arBody: "يعيّن أوامر العمل ويتابع التنفيذ.", enBody: "Assigns work orders and tracks progress." },

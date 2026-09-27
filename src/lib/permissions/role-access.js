@@ -26,6 +26,7 @@ const MODULE_ROLES = {
   dashboard: Object.values(Roles),
   companies: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   users: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
+  tenants: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   properties: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   assets: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   "asset-categories": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR],

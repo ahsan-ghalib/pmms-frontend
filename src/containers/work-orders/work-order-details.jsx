@@ -75,6 +75,12 @@ export default function WorkOrderDetails() {
     }
   }, [id, role]);
 
+  const assignableTechnicians = technicians.filter((user) => {
+    const ids = user.category_ids || (user.categories || []).map((category) => category.id);
+    if (!workOrder?.category_id || !ids.length) return true;
+    return ids.includes(workOrder.category_id);
+  });
+
   if (!workOrder) return <div className="p-8 text-center text-muted-foreground">Loading work order...</div>;
 
   const readonly = workOrder.readonly;
@@ -318,11 +324,14 @@ export default function WorkOrderDetails() {
             <Label>Primary technician</Label>
             <select className="w-full border rounded-md h-10 px-3" value={assign.primary} onChange={(event) => setAssign((current) => ({ ...current, primary: event.target.value }))}>
               <option value="">Select</option>
-              {technicians.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+              {assignableTechnicians.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
             </select>
+            {assignableTechnicians.length === 0 && (
+              <p className="text-xs text-slate-500">No technicians are assigned to this work order&apos;s maintenance category.</p>
+            )}
             <Label>Co-workers</Label>
             <div className="max-h-40 overflow-auto space-y-1">
-              {technicians.filter((user) => String(user.id) !== String(assign.primary)).map((user) => (
+              {assignableTechnicians.filter((user) => String(user.id) !== String(assign.primary)).map((user) => (
                 <label key={user.id} className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={assign.coworkers.includes(user.id)} onChange={(event) => {
                     setAssign((current) => ({

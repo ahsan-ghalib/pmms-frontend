@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Plus, Shield, UserRound, UserX, Users, Wrench } from "lucide-react";
+import { History, Pencil, Plus, Shield, UserRound, UserX, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/common/data-table";
 import TableToolbar from "@/components/common/table-toolbar";
 import PageHeader from "@/components/pmms/page-header";
@@ -18,6 +19,7 @@ import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
 import { Roles, isAdmin } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { UserStatusChangeDialog, UserStatusHistoryDialog } from "./user-status-dialogs";
 
 function userRole(row) {
   return String(row?.role || "").toLowerCase();
@@ -34,6 +36,12 @@ export default function PmmsUsersTable() {
   const [filter, setFilter] = useState("all");
   const [assignUser, setAssignUser] = useState(null);
   const [selectedProperties, setSelectedProperties] = useState([]);
+  const [assignmentShifts, setAssignmentShifts] = useState({});
+  const [statusUser, setStatusUser] = useState(null);
+  const [historyUser, setHistoryUser] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [statusOptions, setStatusOptions] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -55,12 +63,29 @@ export default function PmmsUsersTable() {
     load();
   }, [search]);
 
+  useEffect(() => {
+    pmmsUsersApi.statusOptions().then(setStatusOptions).catch(() => {});
+  }, []);
+
+  const openHistory = async (user) => {
+    setHistoryUser(user);
+    setHistoryLoading(true);
+    try {
+      const data = await pmmsUsersApi.statusHistory(user.id);
+      setHistory(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast.error(apiError(error, t("history_load_failed", { defaultMessage: "Failed to load status history" })));
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const stats = useMemo(() => ({
     total: rows.length,
     active: rows.filter((row) => row.status === "active").length,
     inactive: rows.filter((row) => row.status === "inactive" || row.is_blocked).length,
     technicians: rows.filter((row) => userRole(row) === Roles.TECHNICIAN).length,
-    tenants: rows.filter((row) => userRole(row) === Roles.TENANT).length,
     staff: rows.filter((row) => [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR].includes(userRole(row))).length,
   }), [rows]);
 
@@ -68,7 +93,6 @@ export default function PmmsUsersTable() {
     if (filter === "active") return rows.filter((row) => row.status === "active");
     if (filter === "inactive") return rows.filter((row) => row.status === "inactive" || row.is_blocked);
     if (filter === "technician") return rows.filter((row) => userRole(row) === Roles.TECHNICIAN);
-    if (filter === "tenant") return rows.filter((row) => userRole(row) === Roles.TENANT);
     if (filter === "staff") return rows.filter((row) => [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR].includes(userRole(row)));
     return rows;
   }, [rows, filter]);
@@ -79,7 +103,6 @@ export default function PmmsUsersTable() {
     { id: "inactive", label: t("inactive", { defaultMessage: "Inactive" }), count: stats.inactive },
     { id: "staff", label: t("staff", { defaultMessage: "Staff" }), count: stats.staff },
     { id: "technician", label: t("technicians", { defaultMessage: "Technicians" }), count: stats.technicians },
-    { id: "tenant", label: t("tenants", { defaultMessage: "Tenants" }), count: stats.tenants },
   ];
 
   const columns = [
@@ -99,6 +122,16 @@ export default function PmmsUsersTable() {
       ),
     },
     { accessorKey: "role", header: t("role", { defaultMessage: "Role" }), cell: ({ row }) => labelize(row.original.role) },
+    {
+      id: "categories",
+      header: t("maintenance_categories", { defaultMessage: "Categories" }),
+      cell: ({ row }) => {
+        const items = row.original.categories || [];
+        if (row.original.role !== "technician") return "—";
+        if (!items.length) return <span className="text-slate-400">{t("none", { defaultMessage: "None" })}</span>;
+        return <span className="text-xs text-slate-600 dark:text-slate-300">{items.map((category) => category.name || category.name_en).join(", ")}</span>;
+      },
+    },
     { accessorKey: "company_name", header: t("company", { defaultMessage: "Company" }), cell: ({ row }) => row.original.company_name || "—" },
     { accessorKey: "phone", header: t("phone", { defaultMessage: "Phone" }), cell: ({ row }) => row.original.phone || "—" },
     { accessorKey: "status", header: t("status", { defaultMessage: "Status" }), cell: ({ row }) => <StatusBadge value={row.original.is_blocked ? "blocked" : row.original.status} /> },
@@ -114,31 +147,26 @@ export default function PmmsUsersTable() {
             size="sm"
             variant="outline"
             onClick={() => {
+              const existing = row.original.properties || [];
               setAssignUser(row.original);
-              setSelectedProperties((row.original.properties || []).map((item) => item.property_id).filter(Boolean));
+              setSelectedProperties(existing.map((item) => item.property_id).filter(Boolean));
+              setAssignmentShifts(Object.fromEntries(existing.filter((item) => item.property_id).map((item) => [item.property_id, {
+                start: String(item.shift_starts_at || "").slice(0, 5),
+                end: String(item.shift_ends_at || "").slice(0, 5),
+              }])));
             }}
           >
             {t("assign", { defaultMessage: "Assign" })}
           </Button>
+          <Button size="sm" variant="outline" onClick={() => openHistory(row.original)}>
+            <History className="mr-1 h-3.5 w-3.5" /> {t("history", { defaultMessage: "History" })}
+          </Button>
           {row.original.status === "active" ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={async () => {
-                await pmmsUsersApi.updateStatus(row.original.id, "inactive");
-                load();
-              }}
-            >
+            <Button size="sm" variant="destructive" onClick={() => setStatusUser(row.original)}>
               {t("deactivate", { defaultMessage: "Deactivate" })}
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={async () => {
-                await pmmsUsersApi.updateStatus(row.original.id, "active");
-                load();
-              }}
-            >
+            <Button size="sm" onClick={() => setStatusUser(row.original)}>
               {t("activate", { defaultMessage: "Activate" })}
             </Button>
           )}
@@ -152,21 +180,25 @@ export default function PmmsUsersTable() {
       <PageHeader
         icon={Users}
         title={t("users", { defaultMessage: "Users" })}
-        description={t("users_desc", { defaultMessage: "Company users, roles, and property assignments." })}
+        description={t("users_desc", { defaultMessage: "Staff users, roles, and property assignments. Tenants are managed separately." })}
         actions={isAdmin(session?.user?.role) && (
-          <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/users/create")}>
-            <Plus className="mr-2 h-4 w-4" /> {t("new_user", { defaultMessage: "New user" })}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => router.push("/tenants")}>
+              {t("tenants", { defaultMessage: "Tenants" })}
+            </Button>
+            <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/users/create")}>
+              <Plus className="mr-2 h-4 w-4" /> {t("new_user", { defaultMessage: "New user" })}
+            </Button>
+          </div>
         )}
       />
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <StatCard title={t("users", { defaultMessage: "Users" })} value={stats.total} theme="indigo" icon={Users} onClick={() => setFilter("all")} />
         <StatCard title={t("active", { defaultMessage: "Active" })} value={stats.active} theme="green" icon={UserRound} onClick={() => setFilter("active")} />
         <StatCard title={t("inactive", { defaultMessage: "Inactive" })} value={stats.inactive} theme="rose" icon={UserX} onClick={() => setFilter("inactive")} />
         <StatCard title={t("staff", { defaultMessage: "Staff" })} value={stats.staff} theme="blue" icon={Shield} onClick={() => setFilter("staff")} />
         <StatCard title={t("technicians", { defaultMessage: "Technicians" })} value={stats.technicians} theme="teal" icon={Wrench} onClick={() => setFilter("technician")} />
-        <StatCard title={t("tenants", { defaultMessage: "Tenants" })} value={stats.tenants} theme="purple" icon={Users} onClick={() => setFilter("tenant")} />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -196,23 +228,62 @@ export default function PmmsUsersTable() {
       <DataTable columns={columns} data={filtered} isLoading={loading} columnsBtn={false} total={filtered.length} />
 
       <Dialog open={!!assignUser} onOpenChange={() => setAssignUser(null)}>
-        <DialogContent className="rounded-3xl">
+        <DialogContent className="rounded-3xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("assign_properties_to", { defaultMessage: "Assign properties to {name}", name: assignUser?.name || "" })}</DialogTitle>
           </DialogHeader>
-          <div className="max-h-64 space-y-2 overflow-auto">
-            {properties.map((property) => (
-              <label key={property.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={selectedProperties.includes(property.id)}
-                  onChange={(event) => {
-                    setSelectedProperties((current) => event.target.checked ? [...current, property.id] : current.filter((id) => id !== property.id));
-                  }}
-                />
-                {property.name}
-              </label>
-            ))}
+          {userRole(assignUser) === Roles.SUPERVISOR && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t("shift_hours_hint", { defaultMessage: "Leave empty if this supervisor is always on duty for the property." })}
+            </p>
+          )}
+          <div className="max-h-80 space-y-3 overflow-auto">
+            {properties.map((property) => {
+              const checked = selectedProperties.includes(property.id);
+              const showShifts = userRole(assignUser) === Roles.SUPERVISOR;
+              return (
+                <div key={property.id} className="rounded-xl border border-slate-200/80 p-3 dark:border-white/10">
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        setSelectedProperties((current) => event.target.checked ? [...current, property.id] : current.filter((id) => id !== property.id));
+                      }}
+                    />
+                    {property.name}
+                  </label>
+                  {showShifts && checked && (
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <label className="space-y-1 text-xs text-slate-500">
+                        <span>{t("shift_start", { defaultMessage: "Start" })}</span>
+                        <Input
+                          type="time"
+                          className="h-9 rounded-lg"
+                          value={assignmentShifts[property.id]?.start || ""}
+                          onChange={(event) => setAssignmentShifts((current) => ({
+                            ...current,
+                            [property.id]: { start: event.target.value, end: current[property.id]?.end || "" },
+                          }))}
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs text-slate-500">
+                        <span>{t("shift_end", { defaultMessage: "End" })}</span>
+                        <Input
+                          type="time"
+                          className="h-9 rounded-lg"
+                          value={assignmentShifts[property.id]?.end || ""}
+                          onChange={(event) => setAssignmentShifts((current) => ({
+                            ...current,
+                            [property.id]: { start: current[property.id]?.start || "", end: event.target.value },
+                          }))}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignUser(null)}>{t("cancel", { defaultMessage: "Cancel" })}</Button>
@@ -220,7 +291,16 @@ export default function PmmsUsersTable() {
               className="bg-violet-600 hover:bg-violet-700"
               onClick={async () => {
                 try {
-                  await pmmsUsersApi.assignProperties(assignUser.id, { property_ids: selectedProperties });
+                  const isSupervisor = userRole(assignUser) === Roles.SUPERVISOR;
+                  await pmmsUsersApi.assignProperties(assignUser.id, isSupervisor
+                    ? {
+                        assignments: selectedProperties.map((propertyId) => ({
+                          property_id: propertyId,
+                          shift_starts_at: assignmentShifts[propertyId]?.start || null,
+                          shift_ends_at: assignmentShifts[propertyId]?.end || null,
+                        })),
+                      }
+                    : { property_ids: selectedProperties });
                   toast.success(t("properties_assigned", { defaultMessage: "Properties assigned" }));
                   setAssignUser(null);
                   load();
@@ -234,6 +314,22 @@ export default function PmmsUsersTable() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UserStatusChangeDialog
+        user={statusUser}
+        options={statusOptions}
+        onClose={() => setStatusUser(null)}
+        onSaved={() => {
+          setStatusUser(null);
+          load();
+        }}
+      />
+      <UserStatusHistoryDialog
+        user={historyUser}
+        history={history}
+        loading={historyLoading}
+        onClose={() => setHistoryUser(null)}
+      />
     </div>
   );
 }

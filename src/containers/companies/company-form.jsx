@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Building2, CreditCard, Timer, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { FileField, SelectField, SwitchField, TextField } from "@/components/form-fields";
 import { companiesApi } from "@/services/companies/companies-api";
 import { platformApi } from "@/services/platform/platform-api";
 import { apiError } from "@/lib/pmms";
@@ -55,6 +55,7 @@ export default function CompanyForm({ company }) {
       admin_email: "",
       admin_phone: "",
       admin_password: "",
+      logo: null,
     },
   });
   const accessType = useWatch({ control, name: "access_type" });
@@ -79,6 +80,10 @@ export default function CompanyForm({ company }) {
       status: values.status,
       default_language_id: values.default_language_id || null,
     };
+
+    if (values.logo?.[0]) {
+      payload.logo = values.logo[0];
+    }
 
     if (!isEdit) {
       payload.access_type = values.access_type;
@@ -154,6 +159,22 @@ export default function CompanyForm({ company }) {
           />
           <div className="md:col-span-2">
             <TextField label={t("address", { defaultMessage: "Address" })} name="address" control={control} errors={errors} />
+          </div>
+          <div className="md:col-span-2">
+            <FileField
+              label={t("company_logo", { defaultMessage: "Company logo" })}
+              name="logo"
+              control={control}
+              errors={errors}
+              accept="image/*"
+              helperText={t("company_logo_hint", { defaultMessage: "Shown on the company dashboard and portal instead of the EMARA mark." })}
+            />
+            {company?.logo_url && (
+              <div className="mt-2 flex items-center gap-3">
+                <img src={company.logo_url} alt={company.name} className="h-12 w-12 rounded-lg border border-slate-200 object-contain bg-white dark:border-white/10" />
+                <p className="text-xs text-slate-500">{t("current_logo", { defaultMessage: "Current logo. Upload a new file to replace it." })}</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
