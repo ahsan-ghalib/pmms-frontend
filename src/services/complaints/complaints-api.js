@@ -14,8 +14,14 @@ export const complaintsApi = {
   addNote: async (id, note) => (await axiosInstance.post(`/complaints/${id}/notes`, { note })).data,
   categories: async (params = {}) => unwrapData((await axiosInstance.get("/categories", { params })).data),
   category: async (id) => unwrapData((await axiosInstance.get(`/categories/${id}`)).data),
-  createCategory: async (payload) => unwrapData((await axiosInstance.post("/categories", payload)).data),
-  updateCategory: async (id, payload) => unwrapData((await axiosInstance.put(`/categories/${id}`, payload)).data),
+  createCategory: async (payload) => unwrapData((await axiosInstance.post("/categories", payload, payload instanceof FormData ? { headers: { "Content-Type": undefined } } : {})).data),
+  updateCategory: async (id, payload) => {
+    if (payload instanceof FormData) {
+      payload.append("_method", "PUT");
+      return unwrapData((await axiosInstance.post(`/categories/${id}`, payload, { headers: { "Content-Type": undefined } })).data);
+    }
+    return unwrapData((await axiosInstance.put(`/categories/${id}`, payload)).data);
+  },
   deactivateCategory: async (id) => (await axiosInstance.delete(`/categories/${id}`)).data,
   restoreCategory: async (id) => (await axiosInstance.post(`/categories/${id}/restore`)).data,
   services: async (params = {}) => unwrapData((await axiosInstance.get("/services", { params })).data),

@@ -15,6 +15,7 @@ import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { SearchableEnumDropdown } from "@/components/form-fields";
 
 export default function AssetCategoriesPage() {
   const t = useT("common");
@@ -27,6 +28,8 @@ export default function AssetCategoriesPage() {
   const [editCategory, setEditCategory] = useState(null);
   const [editSubcategory, setEditSubcategory] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [subModalOpen, setSubModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -57,9 +60,11 @@ export default function AssetCategoriesPage() {
 
   const createCategory = async () => {
     try {
-      await assetsApi.createCategory(form);
+      const created = await assetsApi.createCategory(form);
       setForm({ name_en: "", name_ar: "", company_id: form.company_id });
       toast.success(t("category_created", { defaultMessage: "Category created" }));
+      setCategoryModalOpen(false);
+      if (created?.id) setSubForm((prev) => ({ ...prev, category_id: created.id }));
       await load();
     } catch (error) {
       toast.error(apiError(error, t("category_save_failed", { defaultMessage: "Unable to save category" })));
@@ -167,27 +172,7 @@ export default function AssetCategoriesPage() {
         ))}
       </div>
 
-      <section className="glass-panel grid gap-3 rounded-2xl p-6 md:grid-cols-4">
-        {isSuper && (
-          <select className="rounded-lg border bg-transparent px-3 py-2 text-sm" value={form.company_id} onChange={(event) => setForm((prev) => ({ ...prev, company_id: event.target.value }))}>
-            <option value="">{t("company", { defaultMessage: "Company" })}</option>
-            {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-          </select>
-        )}
-        <input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder={t("name_en", { defaultMessage: "Name (EN)" })} value={form.name_en} onChange={(event) => setForm((prev) => ({ ...prev, name_en: event.target.value }))} />
-        <input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder={t("name_ar", { defaultMessage: "Name (AR)" })} value={form.name_ar} onChange={(event) => setForm((prev) => ({ ...prev, name_ar: event.target.value }))} />
-        <Button onClick={createCategory} disabled={!form.name_en}><Plus className="mr-2 h-4 w-4" /> {t("add_category", { defaultMessage: "Add category" })}</Button>
-      </section>
-
-      <section className="glass-panel grid gap-3 rounded-2xl p-6 md:grid-cols-4">
-        <select className="rounded-lg border bg-transparent px-3 py-2 text-sm" value={subForm.category_id} onChange={(event) => setSubForm((prev) => ({ ...prev, category_id: event.target.value }))}>
-          <option value="">{t("category", { defaultMessage: "Category" })}</option>
-          {rows.filter((row) => row.status === "active").map((row) => <option key={row.id} value={row.id}>{row.name_en}</option>)}
-        </select>
-        <input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder={t("name_en", { defaultMessage: "Name (EN)" })} value={subForm.name_en} onChange={(event) => setSubForm((prev) => ({ ...prev, name_en: event.target.value }))} />
-        <input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder={t("name_ar", { defaultMessage: "Name (AR)" })} value={subForm.name_ar} onChange={(event) => setSubForm((prev) => ({ ...prev, name_ar: event.target.value }))} />
-        <Button onClick={createSub} disabled={!subForm.category_id || !subForm.name_en}><Plus className="mr-2 h-4 w-4" /> {t("add_subcategory", { defaultMessage: "Add subcategory" })}</Button>
-      </section>
+      <div className="flex justify-end"><Button onClick={() => setSubModalOpen(true)}><Plus className="mr-2 h-4 w-4" /> {t("add_subcategory", { defaultMessage: "Add subcategory" })}</Button></div>
 
       <div className="space-y-3">
         {filtered.map((row) => (
@@ -273,6 +258,28 @@ export default function AssetCategoriesPage() {
               {t("save_changes", { defaultMessage: "Save changes" })}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={subModalOpen} onOpenChange={setSubModalOpen}>
+        <DialogContent className="rounded-3xl sm:max-w-lg">
+          <DialogHeader><DialogTitle>Add subcategory</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1"><SearchableEnumDropdown name="new-subcategory-parent" label="Parent category" placeholder="Select category" searchPlaceholder="Search categories..." value={subForm.category_id} onChange={(value) => setSubForm((prev) => ({ ...prev, category_id: value }))} options={rows.filter((row) => row.status === "active").map((row) => ({ value: row.id, label: row.name_en, searchText: `${row.name_en} ${row.name_ar || ""}`.toLowerCase() }))} className="mb-0" /></div>
+              <Button type="button" variant="outline" className="mb-0 h-10 w-10 shrink-0 self-end px-0" aria-label="Add category" onClick={() => setCategoryModalOpen(true)}><Plus className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2"><input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="English name" value={subForm.name_en} onChange={(event) => setSubForm((prev) => ({ ...prev, name_en: event.target.value }))} /><input className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="Arabic name" value={subForm.name_ar} onChange={(event) => setSubForm((prev) => ({ ...prev, name_ar: event.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setSubModalOpen(false)}>Cancel</Button><Button className="bg-violet-600 hover:bg-violet-700" onClick={async () => { await createSub(); setSubModalOpen(false); }} disabled={!subForm.category_id || !subForm.name_en}>Add subcategory</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={categoryModalOpen} onOpenChange={setCategoryModalOpen}>
+        <DialogContent className="rounded-3xl sm:max-w-md">
+          <DialogHeader><DialogTitle>Add category</DialogTitle></DialogHeader>
+          <div className="space-y-3"><input className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="English name" value={form.name_en} onChange={(event) => setForm((prev) => ({ ...prev, name_en: event.target.value }))} /><input className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="Arabic name" value={form.name_ar} onChange={(event) => setForm((prev) => ({ ...prev, name_ar: event.target.value }))} />{isSuper && <select className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm" value={form.company_id} onChange={(event) => setForm((prev) => ({ ...prev, company_id: event.target.value }))}><option value="">Company</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select>}</div>
+          <DialogFooter><Button variant="outline" onClick={() => setCategoryModalOpen(false)}>Cancel</Button><Button className="bg-violet-600 hover:bg-violet-700" onClick={createCategory} disabled={!form.name_en}>Add category</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Layers3 } from "lucide-react";
+import { Layers3, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, SwitchField, TextField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
@@ -20,7 +20,7 @@ export default function CategoryForm({ category }) {
   const router = useRouter();
   const isSuper = normalizeRole(useSession().data?.user?.role) === Roles.SUPER_ADMIN;
   const [companies, setCompanies] = useState([]);
-  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { control, register, setValue, watch, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       name_en: category?.name_en || "",
       name_ar: category?.name_ar || "",
@@ -30,9 +30,21 @@ export default function CategoryForm({ category }) {
       reopen_window_hours: category?.reopen_window_hours ?? "",
       status: category?.status || "active",
       visible_to_tenant: category?.visible_to_tenant ?? true,
+      icon_file: null,
+      normal_priority_enabled: category?.normal_priority_enabled ?? true,
+      urgent_priority_enabled: category?.urgent_priority_enabled ?? true,
+      tenant_reopen_enabled: category?.tenant_reopen_enabled ?? true,
+      admin_reopen_enabled: category?.admin_reopen_enabled ?? true,
+      admin_reopen_window_hours: category?.admin_reopen_window_hours ?? "",
       company_id: category?.company_id || undefined,
     },
   });
+  const categoryName = watch("name_en");
+  const generateCode = () => {
+    const words = String(categoryName || "").trim().toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+    const code = words.length > 1 ? words.map((word) => word[0]).join("").slice(0, 8) : (words[0] || "").slice(0, 8);
+    setValue("code", code, { shouldDirty: true, shouldValidate: true });
+  };
 
   useEffect(() => {
     if (isSuper) {
@@ -44,14 +56,13 @@ export default function CategoryForm({ category }) {
     <form
       className="space-y-6"
       onSubmit={handleSubmit(async (values) => {
-        const payload = {
-          ...values,
-          name_ar: values.name_ar || values.name_en,
-          capacity: values.capacity === "" ? null : Number(values.capacity),
-          reopen_window_hours: values.reopen_window_hours === "" ? null : Number(values.reopen_window_hours),
-          visible_to_tenant: Boolean(values.visible_to_tenant),
-        };
-        if (!isSuper) delete payload.company_id;
+        const payload = new FormData();
+        Object.entries(values).forEach(([key, value]) => {
+          if (!isSuper && key === "company_id") return;
+          if (key === "icon_file") { if (value?.[0]) payload.append(key, value[0]); return; }
+          if (value !== undefined && value !== null && value !== "") payload.append(key, typeof value === "boolean" ? (value ? "1" : "0") : value);
+        });
+        payload.set("name_ar", values.name_ar || values.name_en);
         try {
           if (category) {
             await complaintsApi.updateCategory(category.id, payload);
@@ -87,9 +98,11 @@ export default function CategoryForm({ category }) {
         )}
         <TextField label={t("name_en", { defaultMessage: "English name" })} name="name_en" control={control} errors={errors} validation={{ required: "Required" }} />
         <TextField label={t("name_ar", { defaultMessage: "Arabic name" })} name="name_ar" control={control} errors={errors} />
-        <TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: "Required" }} />
+        <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: "Required" }} /></div><Button type="button" variant="outline" className="mb-4 h-10 shrink-0" onClick={generateCode}><WandSparkles className="mr-2 h-4 w-4" /> Generate Code</Button></div>
         <TextField label={t("capacity", { defaultMessage: "Daily capacity" })} name="capacity" control={control} errors={errors} />
         <TextField label={t("reopen_window", { defaultMessage: "Reopen window (hours)" })} name="reopen_window_hours" control={control} errors={errors} />
+        <div className="md:col-span-2"><label className="block text-sm font-medium">Category Icon<input className="mt-2 block w-full rounded-lg border px-3 py-2 text-sm" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" {...register("icon_file")} /></label><p className="mt-1 text-xs text-slate-500">PNG, JPG, SVG or WebP up to 2 MB.</p></div>
+        <TextField label="Admin/Supervisor reopen window (hours)" name="admin_reopen_window_hours" control={control} errors={errors} />
         <SelectField
           label={t("status", { defaultMessage: "Status" })}
           name="status"
@@ -109,6 +122,10 @@ export default function CategoryForm({ category }) {
             errors={errors}
           />
         </div>
+        <SwitchField label="Normal Priority" name="normal_priority_enabled" control={control} errors={errors} />
+        <SwitchField label="Urgent Priority" name="urgent_priority_enabled" control={control} errors={errors} />
+        <SwitchField label="Tenant Reopen" description="Uses the Reopen Window Hours above." name="tenant_reopen_enabled" control={control} errors={errors} />
+        <SwitchField label="Admin/Supervisor Reopen" name="admin_reopen_enabled" control={control} errors={errors} />
         <div className="md:col-span-2">
           <TextField label={t("description", { defaultMessage: "Description" })} name="description" control={control} errors={errors} />
         </div>
