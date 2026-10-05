@@ -45,7 +45,7 @@ export const usersApi = {
 
   // Get available roles
   getAvailableRoles: async () => {
-    const response = await axiosInstance.get("/users/roles/available");
+    const response = await axiosInstance.get("/roles");
     return response.data;
   },
 

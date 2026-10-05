@@ -41,6 +41,7 @@ export default function CompanyForm({ company }) {
       name: company?.name || "",
       legal_name: company?.legal_name || "",
       code: company?.code || "",
+      agent_referral_code: company?.agent_referral_code || "",
       email: company?.email || "",
       phone: company?.phone || "",
       address: company?.address || "",
@@ -75,6 +76,7 @@ export default function CompanyForm({ company }) {
       name: values.name,
       legal_name: values.legal_name || null,
       code: values.code,
+      agent_referral_code: values.agent_referral_code || null,
       email: values.email || null,
       phone: values.phone || null,
       address: values.address || null,
@@ -139,6 +141,7 @@ export default function CompanyForm({ company }) {
           <TextField label={t("name", { defaultMessage: "Name" })} name="name" control={control} errors={errors} validation={{ required: "Required" }} />
           <TextField label={t("legal_name", { defaultMessage: "Legal name" })} name="legal_name" control={control} errors={errors} />
               <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: "Required" }} readOnly /></div><Button type="button" variant="outline" className="mb-4" onClick={() => setValue("code", companyCode(companyName), { shouldDirty: true, shouldValidate: true })}>{t("generate_code", { defaultMessage: "Generate Code" })}</Button></div>
+              <TextField label={t("agent_referral_code", { defaultMessage: "Agent Referral ID / Code (Optional)" })} name="agent_referral_code" control={control} errors={errors} placeholder={t("agent_referral_code_placeholder", { defaultMessage: "Enter referral ID or code" })} />
           <TextField label={t("email", { defaultMessage: "Email" })} name="email" control={control} errors={errors} />
           <TextField label={t("phone", { defaultMessage: "Phone" })} name="phone" control={control} errors={errors} />
           <SelectField label={t("timezone", { defaultMessage: "Timezone" })} name="timezone" control={control} errors={errors} options={TIMEZONES} />

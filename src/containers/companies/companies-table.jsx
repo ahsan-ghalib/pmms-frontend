@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, CreditCard, Eye, Plus, Timer, Users } from "lucide-react";
+import { Archive, Building2, CreditCard, Edit, Eye, KeyRound, MoreHorizontal, Plus, Timer, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/common/data-table";
@@ -16,6 +16,7 @@ import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function CompaniesTable() {
   const t = useT("common");
@@ -26,6 +27,13 @@ export default function CompaniesTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+
+  const companyAdmin = (company) => company.admins?.[0];
+  const archiveCompany = async (company) => {
+    if (!window.confirm(`Archive ${company.name}?`)) return;
+    try { await companiesApi.archive(company.id); toast.success("Company archived"); await load(); }
+    catch (error) { toast.error(apiError(error, "Unable to archive company")); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -143,9 +151,22 @@ export default function CompaniesTable() {
       header: () => <div className="text-right">{t("actions", { defaultMessage: "Actions" })}</div>,
       cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={() => router.push(`/companies/${row.original.id}`)}>
-            <Eye className="mr-2 h-4 w-4" /> {t("view", { defaultMessage: "View" })}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Company actions"><MoreHorizontal className="h-5 w-5" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Company actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push(`/companies/${row.original.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
+              {canManage && !row.original.archived_at && <>
+                <DropdownMenuItem onClick={() => router.push(`/companies/${row.original.id}/edit`)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => companyAdmin(row.original) ? router.push(`/users/edit/${companyAdmin(row.original).id}`) : toast.error("No Company Admin found")}><KeyRound className="mr-2 h-4 w-4" /> Edit Admin</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600" onClick={() => archiveCompany(row.original)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
+              </>}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },

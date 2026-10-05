@@ -87,8 +87,15 @@ export default function UserForm({ userId = null, mode = "create" }) {
       setRolesLoading(true);
       try {
         const response = await usersApi.getAvailableRoles();
-        const list = response?.data?.roles ?? response?.roles ?? [];
-        if (!cancelled) setRoles(Array.isArray(list) ? list : []);
+        const list = Array.isArray(response?.data)
+          ? response.data
+          : response?.data?.roles ?? response?.roles ?? [];
+        if (!cancelled) {
+          setRoles((Array.isArray(list) ? list : []).filter((role) => {
+            const value = String(role?.name || role?.value || "").toLowerCase().replace(/[_\s-]/g, "");
+            return value !== "superadmin";
+          }));
+        }
       } catch {
         if (!cancelled) setRoles([]);
       } finally {

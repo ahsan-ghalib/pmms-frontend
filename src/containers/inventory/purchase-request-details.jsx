@@ -11,6 +11,7 @@ import { inventoryApi } from "@/services/inventory/pmms-inventory-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 
 export default function PurchaseRequestDetails() {
@@ -76,6 +77,9 @@ export default function PurchaseRequestDetails() {
         <p><span className="text-slate-500">{t("created_by", { defaultMessage: "Created by" })}:</span> {pr.created_by || "—"}</p>
         <p><span className="text-slate-500">{t("date", { defaultMessage: "Date" })}:</span> {formatDate(pr.created_at)}</p>
         <p><span className="text-slate-500">{t("submitted", { defaultMessage: "Submitted" })}:</span> {formatDate(pr.submitted_at)}</p>
+        <p><span className="text-slate-500">Request type:</span> {pr.request_type || "part"}</p>
+        <p><span className="text-slate-500">Department:</span> {pr.department || "—"}</p>
+        <p><span className="text-slate-500">Work Order:</span> {pr.work_order_id ? <Link className="text-violet-600 underline" href={`/work-orders/${pr.work_order_id}`}>{pr.work_order_number || pr.work_order_id}</Link> : "—"}</p>
       </section>
 
       <section className="glass-panel rounded-2xl p-6">
