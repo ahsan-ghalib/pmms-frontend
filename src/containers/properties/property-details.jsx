@@ -192,10 +192,11 @@ export default function PropertyDetails() {
       )}
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t("prop_hierarchy", { defaultMessage: "Hierarchy" })}</h2>
+            <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-sm font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">01</span><div><h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t("prop_hierarchy", { defaultMessage: "Hierarchy" })}</h2>
             <p className="text-sm text-slate-500">{t("prop_hierarchy_desc", { defaultMessage: "Each child belongs to one parent. Archive a node instead of deleting it so history stays readable." })}</p>
+            </div></div>
           </div>
           <button
             type="button"
@@ -215,26 +216,24 @@ export default function PropertyDetails() {
             <p className="mt-1 text-sm text-slate-500">{t("no_locations_desc", { defaultMessage: "Add a building, wing, or block under this property." })}</p>
           </div>
         ) : (tree.locations || []).map((location) => (
-          <article key={location.id} className="glass-panel rounded-2xl p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-slate-900 dark:text-white">{location.name}</p>
+          <article key={location.id} className="group overflow-hidden rounded-2xl border border-blue-200/70 bg-white shadow-sm transition-shadow hover:shadow-lg hover:shadow-blue-100/50 dark:border-blue-400/20 dark:bg-slate-900/50 dark:hover:shadow-none">
+            <div className="flex flex-wrap items-start justify-between gap-3 bg-gradient-to-r from-blue-50/80 to-white p-5 dark:from-blue-500/[0.08] dark:to-transparent">
+              <div className="flex-1 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">L</span><div><div className="flex items-center gap-2"><p className="font-semibold text-slate-900 dark:text-white">{location.name}</p>
                   <StatusBadge value={location.archived_at ? "archived" : location.status} />
-                </div>
-                <p className="font-mono text-xs text-slate-500">{location.code} · {labelize(location.type)}</p>
+                  </div><p className="mt-1 font-mono text-xs text-slate-500">{location.code} <span className="font-sans">·</span> {labelize(location.type)}</p></div>
                 {mapsHref(location) && (
                   <a href={mapsHref(location)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">
                     <MapPin className="h-3.5 w-3.5" /> {t("open_maps", { defaultMessage: "Open maps" })}
                   </a>
                 )}
-              </div>
+              </div></div>
               {canManage && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 p-5">
                   {!location.archived_at && (
                     <>
                       <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "location", node: location })}>{t("edit", { defaultMessage: "Edit" })}</Button>
-                      <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}>{t("add_sub_location", { defaultMessage: "Add sub-location" })}</Button>
                       <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveLocation(location.id), t("location_archived", { defaultMessage: "Location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>
                     </>
                   )}
@@ -245,19 +244,29 @@ export default function PropertyDetails() {
               )}
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="border-t border-slate-200/70 bg-slate-50/60 p-5 dark:border-white/10 dark:bg-white/[0.02]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-xs font-bold text-purple-700 dark:bg-purple-500/15 dark:text-purple-300">02</span><div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("sub_locations", { defaultMessage: "Sub-locations" })}</p>
+                  <p className="text-xs text-slate-500">{t("sub_locations_desc", { defaultMessage: "Add sub-locations inside this location." })}</p>
+                </div></div>
+                {!location.archived_at && canManage && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}><Plus className="mr-1.5 h-4 w-4" />{t("add_sub_location", { defaultMessage: "Add sub-location" })}</Button>}
+              </div>
+              <div className="space-y-3">
               {(location.sub_locations || []).map((sub) => (
-                <div key={sub.id} className="rounded-xl border border-slate-200/70 bg-white/50 p-4 dark:border-white/10 dark:bg-white/5">
+                <div key={sub.id} className="relative rounded-xl border border-purple-200/70 bg-white p-4 shadow-sm dark:border-purple-400/20 dark:bg-slate-900/40">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium">{sub.name}</p>
+                    <div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-xs font-bold text-purple-700 dark:bg-purple-500/15 dark:text-purple-300">S</span><div>
+                      <p className="font-semibold">{sub.name}</p>
                       <p className="font-mono text-xs text-slate-500">{sub.code}</p>
                       <StatusBadge value={sub.archived_at ? "archived" : sub.status} />
-                    </div>
+                    </div></div>
                     {canManage && !sub.archived_at && (
                       <div className="flex flex-col gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setDialog({ mode: "sub", parentId: location.id, node: sub })}>{t("edit", { defaultMessage: "Edit" })}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}>{t("add_unit", { defaultMessage: "Add unit" })}</Button>
+                        <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id, node: sub })}>{t("edit", { defaultMessage: "Edit" })}</Button>
+                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}><Plus className="mr-1 h-3.5 w-3.5" />{t("add_unit", { defaultMessage: "Add unit" })}</Button>
+                        </div>
                         <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveSubLocation(sub.id), t("sub_location_archived", { defaultMessage: "Sub-location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>
                       </div>
                     )}
@@ -265,29 +274,38 @@ export default function PropertyDetails() {
                       <Button size="sm" variant="ghost" onClick={() => run(() => propertiesApi.restoreSubLocation(sub.id), t("sub_location_restored", { defaultMessage: "Sub-location restored" }))}>{t("restore", { defaultMessage: "Restore" })}</Button>
                     )}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/10">
+                    <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-100 text-[10px] font-bold text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">03</span>{t("units", { defaultMessage: "Units" })}</p>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {(sub.units || []).map((unit) => (
-                      <div key={unit.id} className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs dark:border-violet-500/30 dark:bg-violet-500/10">
-                        <span className="font-semibold text-violet-800 dark:text-violet-200">{unit.name}</span>
-                        <span className="text-violet-500">{labelize(unit.unit_type)}</span>
+                      <div key={unit.id} className="group/unit rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/70 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-teal-500/30 dark:from-slate-900/70 dark:to-teal-500/10">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-sm font-bold text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">U</span>
+                            <div className="min-w-0"><p className="truncate font-semibold text-slate-900 dark:text-white">{unit.name}</p><p className="mt-1 truncate font-mono text-[11px] text-slate-500">{unit.code}</p></div>
+                          </div>
+                          <StatusBadge value={unit.archived_at ? "archived" : unit.status} />
+                        </div>
+                        <div className="mt-4 flex items-center justify-between border-t border-teal-100 pt-3 text-xs dark:border-teal-500/20">
+                          <div><p className="text-[10px] uppercase tracking-wider text-slate-400">{t("unit_type", { defaultMessage: "Unit type" })}</p><p className="mt-1 font-medium text-slate-700 dark:text-slate-200">{labelize(unit.unit_type) || "—"}</p></div>
                         {canManage && !unit.archived_at && (
-                          <>
-                            <button type="button" className="font-semibold text-violet-700" onClick={() => setDialog({ mode: "unit", parentId: sub.id, node: unit })}>{t("edit", { defaultMessage: "Edit" })}</button>
-                            <button type="button" className="font-semibold text-rose-600" onClick={() => run(() => propertiesApi.archiveUnit(unit.id), t("unit_archived", { defaultMessage: "Unit archived" }))}>{t("archive", { defaultMessage: "Archive" })}</button>
-                          </>
+                          <div className="flex gap-2"><button type="button" className="font-semibold text-violet-700 hover:underline" onClick={() => setDialog({ mode: "unit", parentId: sub.id, node: unit })}>{t("edit", { defaultMessage: "Edit" })}</button><button type="button" className="font-semibold text-rose-600 hover:underline" onClick={() => run(() => propertiesApi.archiveUnit(unit.id), t("unit_archived", { defaultMessage: "Unit archived" }))}>{t("archive", { defaultMessage: "Archive" })}</button></div>
                         )}
                         {canManage && unit.archived_at && (
-                          <button type="button" className="font-semibold" onClick={() => run(() => propertiesApi.restoreUnit(unit.id), t("unit_restored", { defaultMessage: "Unit restored" }))}>{t("restore", { defaultMessage: "Restore" })}</button>
+                          <button type="button" className="font-semibold text-violet-700 hover:underline" onClick={() => run(() => propertiesApi.restoreUnit(unit.id), t("unit_restored", { defaultMessage: "Unit restored" }))}>{t("restore", { defaultMessage: "Restore" })}</button>
                         )}
+                        </div>
                       </div>
                     ))}
                     {!(sub.units || []).length && <span className="text-xs text-slate-400">{t("no_units", { defaultMessage: "No units" })}</span>}
+                    </div>
                   </div>
                 </div>
               ))}
               {!(location.sub_locations || []).length && (
                 <p className="text-sm text-slate-400">{t("no_sub_locations", { defaultMessage: "No sub-locations under this location." })}</p>
               )}
+              </div>
             </div>
           </article>
         ))}
@@ -297,6 +315,7 @@ export default function PropertyDetails() {
         open={!!dialog}
         mode={dialog?.mode}
         node={dialog?.node}
+        parentCode={dialog?.mode === "location" ? tree?.code : dialog?.mode === "sub" ? tree?.locations?.find((item) => item.id === dialog?.parentId)?.code : tree?.locations?.flatMap((item) => item.sub_locations || []).find((item) => item.id === dialog?.parentId)?.code}
         busy={busy}
         onClose={() => setDialog(null)}
         onSubmit={saveNode}

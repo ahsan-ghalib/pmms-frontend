@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Landmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TextField, SelectField } from "@/components/form-fields";
+import { SearchableEnumDropdown, TextField, SelectField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { companiesApi } from "@/services/companies/companies-api";
 import { propertiesApi } from "@/services/properties/properties-api";
@@ -15,6 +15,8 @@ import { apiError } from "@/lib/pmms";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
+import { childCode } from "@/lib/hierarchy-code";
+import { geoApi } from "@/services/geo/geo-api";
 
 const LocationPickerMap = dynamic(
   () => import("@/components/common/location-picker-map"),
@@ -34,6 +36,9 @@ export default function PropertyForm({ property }) {
   const { data: session } = useSession();
   const [companies, setCompanies] = useState([]);
   const [types, setTypes] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
   const isSuper = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
 
   const { control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
@@ -56,12 +61,19 @@ export default function PropertyForm({ property }) {
         state: property?.address?.state || "",
         country: property?.address?.country || "Qatar",
         postal_code: property?.address?.postal_code || "",
+        country_id: property?.address?.country_id ? String(property.address.country_id) : "",
+        state_id: property?.address?.state_id ? String(property.address.state_id) : "",
+        city_id: property?.address?.city_id ? String(property.address.city_id) : "",
       },
     },
   });
 
   const latitude = watch("latitude");
   const longitude = watch("longitude");
+  const propertyName = watch("name");
+  const selectedCompany = companies.find((company) => company.id === watch("company_id"));
+  const countryId = watch("address.country_id");
+  const stateId = watch("address.state_id");
   const mapsPreview = latitude !== "" && longitude !== "" && latitude != null && longitude != null
     ? `https://www.google.com/maps?q=${latitude},${longitude}`
     : null;
@@ -73,8 +85,11 @@ export default function PropertyForm({ property }) {
 
   useEffect(() => {
     propertiesApi.types().then((data) => setTypes(Array.isArray(data) ? data : [])).catch(() => {});
+    geoApi.countries().then((data) => setCountries(Array.isArray(data) ? data : [])).catch(() => {});
     if (isSuper) companiesApi.list().then((data) => setCompanies(Array.isArray(data) ? data.filter((row) => !row.archived_at) : [])).catch(() => {});
   }, [isSuper]);
+  useEffect(() => { setStates([]); setCities([]); if (countryId) geoApi.states(countryId).then((data) => setStates(Array.isArray(data) ? data : [])).catch(() => {}); }, [countryId]);
+  useEffect(() => { setCities([]); if (stateId) geoApi.cities(stateId).then((data) => setCities(Array.isArray(data) ? data : [])).catch(() => {}); }, [stateId]);
 
   const onSubmit = async (values) => {
     const address = values.address || {};
@@ -96,6 +111,9 @@ export default function PropertyForm({ property }) {
         city: address.city?.trim() || null,
         state: address.state?.trim() || null,
         country: address.country?.trim() || null,
+        country_id: address.country_id || null,
+        state_id: address.state_id || null,
+        city_id: address.city_id || null,
         postal_code: address.postal_code?.trim() || null,
       },
     };
@@ -141,7 +159,7 @@ export default function PropertyForm({ property }) {
           </div>
         )}
         <TextField label={t("name", { defaultMessage: "Name" })} name="name" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
-        <TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
+        <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} readOnly /></div><Button type="button" variant="outline" className="mb-4" onClick={() => setValue("code", childCode(selectedCompany?.code, propertyName), { shouldDirty: true, shouldValidate: true })}>{t("generate_code", { defaultMessage: "Generate Code" })}</Button></div>
         <SelectField
           label={t("type", { defaultMessage: "Type" })}
           name="type"
@@ -170,9 +188,9 @@ export default function PropertyForm({ property }) {
           <TextField label={t("address_line_1", { defaultMessage: "Address line 1" })} name="address.line_1" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
         </div>
         <TextField label={t("address_line_2", { defaultMessage: "Address line 2" })} name="address.line_2" control={control} errors={errors} />
-        <TextField label={t("city", { defaultMessage: "City" })} name="address.city" control={control} errors={errors} />
-        <TextField label={t("state", { defaultMessage: "State" })} name="address.state" control={control} errors={errors} />
-        <TextField label={t("country", { defaultMessage: "Country" })} name="address.country" control={control} errors={errors} />
+        <Controller name="address.country_id" control={control} render={({ field }) => (<SearchableEnumDropdown name="address.country_id" label={t("country", { defaultMessage: "Country" })} value={field.value} onChange={(value) => { field.onChange(value); setValue("address.state_id", ""); setValue("address.city_id", ""); setValue("address.state", ""); setValue("address.city", ""); const item = countries.find((row) => String(row.id) === String(value)); setValue("address.country", item?.name || ""); }} options={countries.map((row) => ({ value: String(row.id), label: row.name, searchText: `${row.name} ${row.iso2 || ""}`.toLowerCase() }))} />)} />
+        <Controller name="address.state_id" control={control} render={({ field }) => (<SearchableEnumDropdown name="address.state_id" label={t("state", { defaultMessage: "State" })} value={field.value} onChange={(value) => { field.onChange(value); setValue("address.city_id", ""); setValue("address.city", ""); const item = states.find((row) => String(row.id) === String(value)); setValue("address.state", item?.name || ""); }} options={states.map((row) => ({ value: String(row.id), label: row.name, searchText: row.name.toLowerCase() }))} disabled={!countryId} />)} />
+        <Controller name="address.city_id" control={control} render={({ field }) => (<SearchableEnumDropdown name="address.city_id" label={t("city", { defaultMessage: "City" })} value={field.value} onChange={(value) => { field.onChange(value); const item = cities.find((row) => String(row.id) === String(value)); setValue("address.city", item?.name || ""); }} options={cities.map((row) => ({ value: String(row.id), label: row.name, searchText: row.name.toLowerCase() }))} disabled={!stateId} />)} />
         <TextField label={t("postal_code", { defaultMessage: "Postal code" })} name="address.postal_code" control={control} errors={errors} />
       </section>
 

@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileField, SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { FileField, SearchableEnumDropdown, SelectField, SwitchField, TextField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { tenantsApi } from "@/services/tenants/tenants-api";
 import { companiesApi } from "@/services/companies/companies-api";
@@ -15,6 +16,11 @@ import { apiError } from "@/lib/pmms";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
+
+const NATIONALITY_OPTIONS = "AF AX AL DZ AS AD AO AI AQ AG AR AM AW AU AT AZ BS BH BD BB BY BE BZ BJ BM BT BO BQ BA BW BV BR IO BN BG BF BI CV KH CM CA KY CF TD CL CN CX CC CO KM CG CD CK CR CI HR CU CW CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FK FO FJ FI FR GF PF TF GA GM GE DE GH GI GR GL GD GP GU GT GG GN GW GY HT HM VA HN HK HU IS IN ID IR IQ IE IM IL IT JM JP JE JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MO MG MW MY MV ML MT MH MQ MR MU YT MX FM MD MC MN ME MS MA MZ MM NA NR NP NL NC NZ NI NE NG NU NF MK MP NO OM PK PW PS PA PG PY PE PH PN PL PT PR QA RE RO RU RW BL SH KN LC MF PM VC WS SM ST SA SN RS SC SL SG SX SK SI SB SO ZA GS SS ES LK SD SR SJ SE CH SY TW TJ TZ TH TL TG TK TO TT TN TR TM TC TV UG UA AE GB US UM UY UZ VU VE VN VG VI WF EH YE ZM ZW".split(" ").map((code) => {
+  const label = new Intl.DisplayNames(["en"], { type: "region" }).of(code);
+  return { value: label, label, searchText: `${code} ${label}`.toLowerCase() };
+}).filter((option) => option.label).sort((a, b) => a.label.localeCompare(b.label));
 
 export default function TenantForm({ tenant }) {
   const t = useT("common");
@@ -118,7 +124,24 @@ export default function TenantForm({ tenant }) {
           </div>
         )}
         <TextField label={t("tenant_name", { defaultMessage: "Tenant name" })} name="name" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
-        <TextField label={t("nationality", { defaultMessage: "Nationality" })} name="nationality" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
+        <Controller
+          name="nationality"
+          control={control}
+          rules={{ required: t("required", { defaultMessage: "Required" }) }}
+          render={({ field }) => (
+            <SearchableEnumDropdown
+              name="nationality"
+              label={t("nationality", { defaultMessage: "Nationality" })}
+              placeholder={t("select_nationality", { defaultMessage: "Select Nationality" })}
+              searchPlaceholder={t("search", { defaultMessage: "Search..." })}
+              value={field.value}
+              onChange={field.onChange}
+              options={NATIONALITY_OPTIONS}
+              errors={errors}
+              validation={{ required: true }}
+            />
+          )}
+        />
         <TextField label={t("email", { defaultMessage: "Email address" })} name="email" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
         <TextField label={t("mobile", { defaultMessage: "Mobile number" })} name="phone" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
         <TextField

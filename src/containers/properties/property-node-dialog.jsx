@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TextField, SelectField } from "@/components/form-fields";
 import { useT } from "@/lib/use-t";
+import { childCode } from "@/lib/hierarchy-code";
 
 const LocationPickerMap = dynamic(
   () => import("@/components/common/location-picker-map"),
@@ -16,7 +17,7 @@ const LocationPickerMap = dynamic(
 const LOCATION_TYPES = ["building", "wing", "block", "floor", "zone", "parking"];
 const UNIT_TYPES = ["residential", "office", "retail", "common", "vacant", "storage"];
 
-export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit, busy }) {
+export default function PropertyNodeDialog({ open, mode, node, parentCode, onClose, onSubmit, busy }) {
   const t = useT("common");
   const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
@@ -51,6 +52,7 @@ export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit
 
   const latitude = watch("latitude");
   const longitude = watch("longitude");
+  const name = watch("name");
   const handleLocationChange = useCallback((lat, lng) => {
     setValue("latitude", lat, { shouldDirty: true });
     setValue("longitude", lng, { shouldDirty: true });
@@ -71,7 +73,7 @@ export default function PropertyNodeDialog({ open, mode, node, onClose, onSubmit
           }))}
         >
           <TextField label={t("name", { defaultMessage: "Name" })} name="name" control={control} errors={errors} validation={{ required: true }} />
-          <TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: true }} />
+          <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: true }} readOnly /></div><Button type="button" variant="outline" className="mb-4" onClick={() => setValue("code", childCode(parentCode, name), { shouldDirty: true, shouldValidate: true })}>{t("generate_code", { defaultMessage: "Generate Code" })}</Button></div>
           {mode === "location" && (
             <SelectField
               label={t("type", { defaultMessage: "Type" })}

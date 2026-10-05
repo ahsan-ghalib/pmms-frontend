@@ -26,6 +26,7 @@ export function SearchableEnumDropdown({
   searchPlaceholder = "Search...",
   emptyMessage = "No options found.",
   fetchUrl,
+  options = [],
   value,
   onChange,
   validation = {},
@@ -59,7 +60,11 @@ export function SearchableEnumDropdown({
     }
   }, [fetchUrl]);
 
-  const selectedOption = enumOptions.find((option) => option.value === value);
+  const resolvedOptions = options.length > 0
+    ? options
+    : enumOptions;
+
+  const selectedOption = resolvedOptions.find((option) => option.value === value);
 
   return (
     <div className={cn("mb-4", className)}>
@@ -99,7 +104,7 @@ export function SearchableEnumDropdown({
             <CommandList className="max-h-[200px] overflow-y-auto">
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               <CommandGroup>
-                {enumOptions.map((option) => (
+                {resolvedOptions.map((option) => (
                   <CommandItem
                     key={option.value}
                     value={option.searchText}
