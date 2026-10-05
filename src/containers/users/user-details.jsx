@@ -25,6 +25,10 @@ import { usersApi } from "@/services/users/users-api";
 import { formatDistanceToNow, format } from "date-fns";
 import { DeleteDialogBox } from "@/components/common/delete-dialog-box";
 import { hasPermissionSync, Permissions } from "@/lib/permissions";
+import { useSession } from "next-auth/react";
+import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { KeyRound, LogOut } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function UserDetails({ userId }) {
   const router = useRouter();
@@ -32,6 +36,10 @@ export default function UserDetails({ userId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { data: session } = useSession();
+  const isSuperAdmin = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
 
   useEffect(() => {
     if (userId) {
@@ -73,6 +81,19 @@ export default function UserDetails({ userId }) {
     } finally {
       setIsDeleting(false);
       setDeletePopupOpen(false);
+    }
+  };
+
+  const confirmLogoutAll = async () => {
+    try {
+      setIsLoggingOut(true);
+      await usersApi.logoutAllSessions(userId);
+      toast.success("All user sessions have been ended");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to end user sessions");
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutDialogOpen(false);
     }
   };
 
@@ -300,6 +321,16 @@ export default function UserDetails({ userId }) {
         </Card>
       </div>
 
+      {isSuperAdmin && (
+        <Card className="border-amber-200 dark:border-amber-500/30">
+          <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-amber-600" /> Security</CardTitle></CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="font-medium">End all active sessions</p><p className="text-sm text-muted-foreground">This will sign the user out from Web, Android, and iOS. They must log in again.</p></div>
+            <Button variant="destructive" onClick={() => setLogoutDialogOpen(true)}><LogOut className="mr-2 h-4 w-4" />Logout all sessions</Button>
+          </CardContent>
+        </Card>
+      )}
+
       <DeleteDialogBox
         open={deletePopupOpen}
         onClose={() => setDeletePopupOpen(false)}
@@ -308,6 +339,13 @@ export default function UserDetails({ userId }) {
         title="Delete User"
         description={`Are you sure you want to delete "${user.name}"? This action cannot be undone and will permanently remove all user data.`}
       />
+
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Logout all sessions?</AlertDialogTitle><AlertDialogDescription>This will sign {user.name} out from Web, Android, and iOS. They will need to log in again.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel disabled={isLoggingOut}>Cancel</AlertDialogCancel><AlertDialogAction disabled={isLoggingOut} onClick={(event) => { event.preventDefault(); confirmLogoutAll(); }}>{isLoggingOut ? "Ending sessions…" : "Logout all sessions"}</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { History, Pencil, Plus, Shield, UserRound, UserX, Users, Wrench } from "lucide-react";
+import { History, LogOut, MoreHorizontal, Pencil, Plus, Shield, UserRound, UserX, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/common/data-table";
@@ -12,6 +12,8 @@ import PageHeader from "@/components/pmms/page-header";
 import StatCard from "@/components/common/stat-card";
 import { StatusBadge } from "@/components/pmms/status-badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { pmmsUsersApi } from "@/services/users/pmms-users-api";
 import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError, labelize } from "@/lib/pmms";
@@ -42,6 +44,9 @@ export default function PmmsUsersTable() {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState(null);
+  const [logoutUser, setLogoutUser] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const isSuperAdmin = String(session?.user?.role || "").toLowerCase() === Roles.SUPER_ADMIN;
 
   const load = async () => {
     setLoading(true);
@@ -78,6 +83,20 @@ export default function PmmsUsersTable() {
       setHistory([]);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const logoutAllSessions = async () => {
+    if (!logoutUser) return;
+    try {
+      setLoggingOut(true);
+      await pmmsUsersApi.logoutAllSessions(logoutUser.id);
+      toast.success(t("sessions_ended", { defaultMessage: "All user sessions have been ended" }));
+    } catch (error) {
+      toast.error(apiError(error, t("sessions_end_failed", { defaultMessage: "Failed to end user sessions" })));
+    } finally {
+      setLoggingOut(false);
+      setLogoutUser(null);
     }
   };
 
@@ -139,37 +158,21 @@ export default function PmmsUsersTable() {
       id: "actions",
       header: () => <div className="text-right">{t("actions", { defaultMessage: "Actions" })}</div>,
       cell: ({ row }) => (
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => router.push(`/users/${row.original.id}/edit`)}>
-            <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const existing = row.original.properties || [];
-              setAssignUser(row.original);
-              setSelectedProperties(existing.map((item) => item.property_id).filter(Boolean));
-              setAssignmentShifts(Object.fromEntries(existing.filter((item) => item.property_id).map((item) => [item.property_id, {
-                start: String(item.shift_starts_at || "").slice(0, 5),
-                end: String(item.shift_ends_at || "").slice(0, 5),
-              }])));
-            }}
-          >
-            {t("assign", { defaultMessage: "Assign" })}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => openHistory(row.original)}>
-            <History className="mr-1 h-3.5 w-3.5" /> {t("history", { defaultMessage: "History" })}
-          </Button>
-          {row.original.status === "active" ? (
-            <Button size="sm" variant="destructive" onClick={() => setStatusUser(row.original)}>
-              {t("deactivate", { defaultMessage: "Deactivate" })}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => setStatusUser(row.original)}>
-              {t("activate", { defaultMessage: "Activate" })}
-            </Button>
-          )}
+        <div className="flex w-full justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-9 w-9 p-0" aria-label={t("more_actions", { defaultMessage: "More actions" })}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}/edit`)}><Pencil className="mr-2 h-4 w-4" />{t("edit", { defaultMessage: "Edit" })}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { const existing = row.original.properties || []; setAssignUser(row.original); setSelectedProperties(existing.map((item) => item.property_id).filter(Boolean)); setAssignmentShifts(Object.fromEntries(existing.filter((item) => item.property_id).map((item) => [item.property_id, { start: String(item.shift_starts_at || "").slice(0, 5), end: String(item.shift_ends_at || "").slice(0, 5) }]))); }}>{t("assign", { defaultMessage: "Assign" })}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openHistory(row.original)}><History className="mr-2 h-4 w-4" />{t("history", { defaultMessage: "History" })}</DropdownMenuItem>
+            {isSuperAdmin && row.original.id !== session?.user?.id && <DropdownMenuItem className="text-amber-700 focus:text-amber-700" onClick={() => setLogoutUser(row.original)}><LogOut className="mr-2 h-4 w-4" />{t("logout_sessions", { defaultMessage: "Logout sessions" })}</DropdownMenuItem>}
+            <DropdownMenuItem className={row.original.status === "active" ? "text-rose-600 focus:text-rose-600" : "text-violet-700 focus:text-violet-700"} onClick={() => setStatusUser(row.original)}><UserX className="mr-2 h-4 w-4" />{row.original.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -330,6 +333,23 @@ export default function PmmsUsersTable() {
         loading={historyLoading}
         onClose={() => setHistoryUser(null)}
       />
+      <AlertDialog open={!!logoutUser} onOpenChange={(open) => { if (!open && !loggingOut) setLogoutUser(null); }}>
+        <AlertDialogContent className="rounded-2xl border-amber-200 p-6 shadow-2xl dark:border-amber-500/30">
+          <AlertDialogHeader>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"><LogOut className="h-6 w-6" /></div>
+            <AlertDialogTitle>End all active sessions?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 leading-6">
+              <span className="block">You are about to sign <strong>{logoutUser?.name || logoutUser?.email}</strong> out from every active device.</span>
+              <span className="block rounded-xl bg-amber-50 p-3 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200"><strong>This affects:</strong> Web browser, Android app, and iOS app.</span>
+              <span className="block">The user will see <strong>“Your session has ended. Please log in again.”</strong> and must sign in again on their next request.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel disabled={loggingOut}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={loggingOut} onClick={(event) => { event.preventDefault(); logoutAllSessions(); }} className="bg-amber-600 text-white hover:bg-amber-700">{loggingOut ? "Ending sessions…" : "End all sessions"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

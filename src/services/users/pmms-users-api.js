@@ -7,6 +7,7 @@ export const pmmsUsersApi = {
   create: async (payload) => (await axiosInstance.post("/users", payload)).data,
   update: async (id, payload) => (await axiosInstance.put(`/users/${id}`, payload)).data,
   updateStatus: async (id, payload) => (await axiosInstance.patch(`/users/${id}/status`, payload)).data,
+  logoutAllSessions: async (id) => (await axiosInstance.post(`/users/${id}/logout-all`)).data,
   statusHistory: async (id) => unwrapData((await axiosInstance.get(`/users/${id}/status-history`)).data),
   statusOptions: async () => unwrapData((await axiosInstance.get("/users/status-options")).data),
   assignProperties: async (id, payload) => (await axiosInstance.post(`/users/${id}/properties`, payload)).data,

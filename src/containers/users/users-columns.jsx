@@ -21,7 +21,8 @@ import {
   User,
   Mail,
   Phone,
-  LogIn
+  LogIn,
+  LogOut
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { hasPermissionSync, Permissions } from "@/lib/permissions";
@@ -59,7 +60,9 @@ export const usersColumns = (
   handleViewDetails,
   handleToggleStatus,
   currentUserId,
-  handleLoginAs
+  handleLoginAs,
+  handleLogoutAll,
+  canManageSessions
 ) => [
   {
     accessorKey: "avatar",
@@ -216,6 +219,12 @@ export const usersColumns = (
               <DropdownMenuItem onClick={() => handleViewDetails(user)}>
                 <Eye className="mr-2 h-4 w-4" />
                 View details
+              </DropdownMenuItem>
+            )}
+            {canManageSessions && !isSelf && typeof handleLogoutAll === "function" && (
+              <DropdownMenuItem onClick={() => handleLogoutAll(user)} className="text-amber-700 focus:text-amber-700">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout all sessions
               </DropdownMenuItem>
             )}
             {hasPermissionSync(Permissions.EDIT_USERS) && !isSuperAdmin && !isSelf && (

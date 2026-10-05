@@ -12,6 +12,7 @@ import TableToolbar from "@/components/common/table-toolbar";
 import { usersApi } from "@/services/users/users-api";
 import useDebounce from "@/hooks/useDebounceRef";
 import { hasPermissionSync, Permissions } from "@/lib/permissions";
+import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useTranslations } from "next-intl";
 import axiosInstance from "@/lib/axios";
 import {
@@ -33,6 +34,7 @@ export default function UsersTable({
   const router = useRouter();
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
+  const canManageSessions = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
 
   const [tableData, setTableData] = useState([]);
   const [page, setPage] = useState(0);
@@ -156,6 +158,16 @@ export default function UsersTable({
     }
   };
 
+  const handleLogoutAll = async (user) => {
+    if (!window.confirm(`Logout ${user.name || user.email} from Web, Android, and iOS?`)) return;
+    try {
+      await usersApi.logoutAllSessions(user.id);
+      toast.success("All user sessions have been ended");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to end user sessions");
+    }
+  };
+
   const confirmDelete = async () => {
     if (!userToDelete) return;
 
@@ -231,7 +243,9 @@ export default function UsersTable({
           handleViewDetails,
           handleToggleStatus,
           currentUserId,
-          handleLoginAs
+          handleLoginAs,
+          handleLogoutAll,
+          canManageSessions
         )}
         data={tableData}
         page={page}

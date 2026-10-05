@@ -49,6 +49,7 @@ export default function CategoryForm({ category }) {
           name_ar: values.name_ar || values.name_en,
           capacity: values.capacity === "" ? null : Number(values.capacity),
           reopen_window_hours: values.reopen_window_hours === "" ? null : Number(values.reopen_window_hours),
+          visible_to_tenant: Boolean(values.visible_to_tenant),
         };
         if (!isSuper) delete payload.company_id;
         try {

@@ -108,9 +108,6 @@ export default function PropertyForm({ property }) {
       address: {
         line_1: (address.line_1 || "").trim(),
         line_2: address.line_2?.trim() || null,
-        city: address.city?.trim() || null,
-        state: address.state?.trim() || null,
-        country: address.country?.trim() || null,
         country_id: address.country_id || null,
         state_id: address.state_id || null,
         city_id: address.city_id || null,

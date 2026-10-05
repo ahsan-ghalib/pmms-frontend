@@ -41,6 +41,7 @@ export default function ServiceForm({ service }) {
         const payload = {
           ...values,
           name_ar: values.name_ar || values.name_en,
+          visible_to_tenant: Boolean(values.visible_to_tenant),
         };
         try {
           if (service) {

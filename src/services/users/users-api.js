@@ -32,6 +32,10 @@ export const usersApi = {
     const response = await axiosInstance.put(`/users/${id}`, userData);
     return response.data;
   },
+  logoutAllSessions: async (id) => {
+    const response = await axiosInstance.post(`/users/${id}/logout-all`);
+    return response.data;
+  },
 
   // Delete user
   deleteUser: async (id) => {
