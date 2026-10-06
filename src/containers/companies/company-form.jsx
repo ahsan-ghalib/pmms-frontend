@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Building2, CreditCard, Timer, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileField, SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { FileField, PhoneField, SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { geoApi } from "@/services/geo/geo-api";
 import { companiesApi } from "@/services/companies/companies-api";
 import { platformApi } from "@/services/platform/platform-api";
 import { apiError } from "@/lib/pmms";
@@ -36,6 +37,7 @@ export default function CompanyForm({ company }) {
   const isEdit = Boolean(company);
   const [languages, setLanguages] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [countries, setCountries] = useState([]);
   const { control, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       name: company?.name || "",
@@ -45,6 +47,7 @@ export default function CompanyForm({ company }) {
       email: company?.email || "",
       phone: company?.phone || "",
       address: company?.address || "",
+      country_id: company?.country_id ? String(company.country_id) : "",
       timezone: company?.timezone || "Asia/Qatar",
       status: company?.status || "active",
       default_language_id: company?.default_language_id || undefined,
@@ -65,6 +68,7 @@ export default function CompanyForm({ company }) {
   const companyName = watch("name");
 
   useEffect(() => {
+    geoApi.countries().then((data) => setCountries(Array.isArray(data) ? data : [])).catch(() => {});
     platformApi.languages().then((data) => setLanguages(Array.isArray(data) ? data : [])).catch(() => {});
     if (!isEdit) {
       platformApi.plans().then((data) => setPlans(Array.isArray(data) ? data.filter((plan) => plan.is_active) : [])).catch(() => {});
@@ -80,6 +84,7 @@ export default function CompanyForm({ company }) {
       email: values.email || null,
       phone: values.phone || null,
       address: values.address || null,
+      country_id: values.country_id ? Number(values.country_id) : null,
       timezone: values.timezone,
       status: values.status,
       default_language_id: values.default_language_id || null,
@@ -143,7 +148,8 @@ export default function CompanyForm({ company }) {
               <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: "Required" }} readOnly /></div><Button type="button" variant="outline" className="mb-4" onClick={() => setValue("code", companyCode(companyName), { shouldDirty: true, shouldValidate: true })}>{t("generate_code", { defaultMessage: "Generate Code" })}</Button></div>
               <TextField label={t("agent_referral_code", { defaultMessage: "Agent Referral ID / Code (Optional)" })} name="agent_referral_code" control={control} errors={errors} placeholder={t("agent_referral_code_placeholder", { defaultMessage: "Enter referral ID or code" })} />
           <TextField label={t("email", { defaultMessage: "Email" })} name="email" control={control} errors={errors} />
-          <TextField label={t("phone", { defaultMessage: "Phone" })} name="phone" control={control} errors={errors} />
+          <SelectField label={t("country", { defaultMessage: "Country" })} name="country_id" control={control} errors={errors} validation={{ required: "Required" }} options={countries.map((country) => ({ value: String(country.id), label: country.name }))} />
+          <Controller name="phone" control={control} render={({ field }) => <PhoneField {...field} label={t("phone", { defaultMessage: "Phone" })} defaultCountry={company?.country?.iso2 || "QA"} />} />
           <SelectField label={t("timezone", { defaultMessage: "Timezone" })} name="timezone" control={control} errors={errors} options={TIMEZONES} />
           <SelectField
             label={t("status", { defaultMessage: "Status" })}
@@ -299,7 +305,7 @@ export default function CompanyForm({ company }) {
             <div className="grid gap-4 md:grid-cols-2">
               <TextField label={t("admin_name", { defaultMessage: "Admin name" })} name="admin_name" control={control} errors={errors} validation={{ required: "Required" }} />
               <TextField label={t("admin_email", { defaultMessage: "Admin email" })} name="admin_email" control={control} errors={errors} validation={{ required: "Required" }} />
-              <TextField label={t("admin_phone", { defaultMessage: "Admin phone" })} name="admin_phone" control={control} errors={errors} />
+              <Controller name="admin_phone" control={control} render={({ field }) => <PhoneField {...field} label={t("admin_phone", { defaultMessage: "Admin phone" })} defaultCountry={company?.country?.iso2 || "QA"} />} />
               <TextField label={t("admin_password", { defaultMessage: "Admin password" })} name="admin_password" type="password" control={control} errors={errors} validation={{ required: "Required", minLength: { value: 8, message: "Min 8 characters" } }} />
             </div>
           </section>

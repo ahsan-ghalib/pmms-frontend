@@ -54,9 +54,11 @@ export default function PropertyDetails() {
   const counts = useMemo(() => {
     const locations = tree?.locations || [];
     const subs = locations.flatMap((location) => location.sub_locations || []);
-    const units = subs.flatMap((sub) => sub.units || []);
+  const units = subs.flatMap((sub) => sub.units || []);
     return { locations: locations.length, subs: subs.length, units: units.length };
   }, [tree]);
+  const levelLabel = (level, fallback) => tree?.property_type?.levels?.find((item) => item.level === level)?.plural_label || tree?.property_type?.levels?.find((item) => item.level === level)?.label || fallback;
+  const levelEnabled = (level) => tree?.property_type?.levels?.find((item) => item.level === level)?.enabled !== false;
 
   const run = async (action, success) => {
     setBusy(true);
@@ -120,8 +122,8 @@ export default function PropertyDetails() {
               </Button>
             )}
             {canManage && !archived && (
-              <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => setDialog({ mode: "location" })}>
-                <Plus className="mr-2 h-4 w-4" /> {t("add_location", { defaultMessage: "Add location" })}
+                <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => setDialog({ mode: "location" })}>
+                <Plus className="mr-2 h-4 w-4" /> {t("add_level", { defaultMessage: "Add {label}", label: levelLabel(1, "Location").toLowerCase() })}
               </Button>
             )}
             {canArchive && !archived && (
@@ -140,9 +142,9 @@ export default function PropertyDetails() {
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard title={t("status", { defaultMessage: "Status" })} value={labelize(archived ? "archived" : tree.status)} theme="indigo" icon={Landmark} />
-        <StatCard title={t("locations", { defaultMessage: "Locations" })} value={counts.locations} theme="blue" icon={Landmark} />
-        <StatCard title={t("sub_locations", { defaultMessage: "Sub-locations" })} value={counts.subs} theme="purple" icon={Landmark} />
-        <StatCard title={t("units", { defaultMessage: "Units" })} value={counts.units} theme="teal" icon={Landmark} />
+        <StatCard title={levelLabel(1, t("locations", { defaultMessage: "Locations" }))} value={counts.locations} theme="blue" icon={Landmark} />
+        <StatCard title={levelLabel(2, t("sub_locations", { defaultMessage: "Sub-locations" }))} value={counts.subs} theme="purple" icon={Landmark} />
+        <StatCard title={levelLabel(3, t("units", { defaultMessage: "Units" }))} value={counts.units} theme="teal" icon={Landmark} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -247,10 +249,10 @@ export default function PropertyDetails() {
             <div className="border-t border-slate-200/70 bg-slate-50/60 p-5 dark:border-white/10 dark:bg-white/[0.02]">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-xs font-bold text-purple-700 dark:bg-purple-500/15 dark:text-purple-300">02</span><div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("sub_locations", { defaultMessage: "Sub-locations" })}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{levelLabel(2, t("sub_locations", { defaultMessage: "Sub-locations" }))}</p>
                   <p className="text-xs text-slate-500">{t("sub_locations_desc", { defaultMessage: "Add sub-locations inside this location." })}</p>
                 </div></div>
-                {!location.archived_at && canManage && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}><Plus className="mr-1.5 h-4 w-4" />{t("add_sub_location", { defaultMessage: "Add sub-location" })}</Button>}
+                {!location.archived_at && canManage && levelEnabled(2) && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}><Plus className="mr-1.5 h-4 w-4" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(2, "sub-location").toLowerCase() })}</Button>}
               </div>
               <div className="space-y-3">
               {(location.sub_locations || []).map((sub) => (
@@ -265,7 +267,7 @@ export default function PropertyDetails() {
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id, node: sub })}>{t("edit", { defaultMessage: "Edit" })}</Button>
-                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}><Plus className="mr-1 h-3.5 w-3.5" />{t("add_unit", { defaultMessage: "Add unit" })}</Button>
+                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}><Plus className="mr-1 h-3.5 w-3.5" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(3, "unit").toLowerCase() })}</Button>
                         </div>
                         <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveSubLocation(sub.id), t("sub_location_archived", { defaultMessage: "Sub-location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>
                       </div>
@@ -275,7 +277,7 @@ export default function PropertyDetails() {
                     )}
                   </div>
                   <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/10">
-                    <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-100 text-[10px] font-bold text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">03</span>{t("units", { defaultMessage: "Units" })}</p>
+                    <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"><span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-100 text-[10px] font-bold text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">03</span>{levelLabel(3, t("units", { defaultMessage: "Units" }))}</p>
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {(sub.units || []).map((unit) => (
                       <div key={unit.id} className="group/unit rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/70 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-teal-500/30 dark:from-slate-900/70 dark:to-teal-500/10">

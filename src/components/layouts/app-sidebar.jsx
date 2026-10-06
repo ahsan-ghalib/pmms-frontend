@@ -77,6 +77,8 @@ export function useNavItems() {
         { title: t("sidebar_subscriptions", { defaultMessage: "Subscriptions" }), url: "/subscriptions", module: "subscriptions" },
         { title: t("sidebar_trials", { defaultMessage: "Trials" }), url: "/trials", module: "trials" },
         { title: t("sidebar_platform_settings", { defaultMessage: "Platform Settings" }), url: "/platform-settings", module: "platform-settings" },
+        { title: t("sidebar_property_types", { defaultMessage: "Property Types" }), url: "/property-types", module: "property-types" },
+        { title: t("sidebar_modules", { defaultMessage: "Modules" }), url: "/settings/modules", module: "platform-settings" },
       ],
     },
     {

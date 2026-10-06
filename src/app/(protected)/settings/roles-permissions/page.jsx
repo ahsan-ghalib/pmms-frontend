@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { companiesApi } from "@/services/companies/companies-api";
+import { platformApi } from "@/services/platform/platform-api";
+import { useSession } from "next-auth/react";
 
 // Helper function to format permission names for display
 // Converts "add-users" to "Add Users"
@@ -21,6 +24,13 @@ const formatPermissionName = (name) => {
 
 export default function RolesPermissionsPage() {
   const t = useTranslations("admin");
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === "super-admin";
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [companyModules, setCompanyModules] = useState([]);
+  const [roleName, setRoleName] = useState("");
+  const [showCreateRole, setShowCreateRole] = useState(false);
   const [roles, setRoles] = useState([]);
   const [selectedRoleId, setSelectedRoleId] = useState(null);
   const [modules, setModules] = useState([]);
@@ -50,6 +60,11 @@ export default function RolesPermissionsPage() {
     fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => { if (isSuperAdmin) companiesApi.list().then((data) => setCompanies(Array.isArray(data) ? data : [])).catch(() => {}); }, [isSuperAdmin]);
+  useEffect(() => { if (selectedCompanyId) platformApi.companyModules(selectedCompanyId).then(setCompanyModules).catch(() => setCompanyModules([])); }, [selectedCompanyId]);
+  const saveCompanyModules = async () => { await platformApi.updateCompanyModules(selectedCompanyId, companyModules.map((module) => ({ module_id: module.id, is_enabled: module.is_enabled }))); toast.success("Company modules updated"); };
+  const createRole = async () => { if (!roleName.trim()) return; try { await platformApi.createCompanyRole({ name: roleName.trim(), permissions: [] }); toast.success("Role created"); setRoleName(""); setShowCreateRole(false); const data = await rolesPermissionsApi.getRoles(); setRoles(data || []); } catch (error) { toast.error(error?.response?.data?.message || "Unable to create role"); } };
 
   useEffect(() => {
     if (!selectedRoleId) return;
@@ -209,6 +224,10 @@ export default function RolesPermissionsPage() {
         </Button>
       </div>
 
+      {isSuperAdmin && <div className="rounded-2xl border bg-white/40 p-4 dark:bg-slate-900/40"><div className="mb-3 flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Company module access</h2><p className="text-sm text-muted-foreground">Enable or disable company-level modules.</p></div><select className="h-10 rounded-md border bg-transparent px-3 text-sm" value={selectedCompanyId} onChange={(event) => setSelectedCompanyId(event.target.value)}><option value="">Select company</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></div>{selectedCompanyId && <><div className="grid gap-2 md:grid-cols-2">{companyModules.map((module) => <label key={module.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"><span>{module.name}</span><Switch checked={module.is_enabled} onCheckedChange={(checked) => setCompanyModules((items) => items.map((item) => item.id === module.id ? { ...item, is_enabled: checked } : item))} /></label>)}</div><Button className="mt-3" onClick={saveCompanyModules}>Save company modules</Button></>}</div>}
+
+      {!isSuperAdmin && <div className="rounded-2xl border bg-white/40 p-4 dark:bg-slate-900/40"><div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold">Custom company roles</h2><p className="text-sm text-muted-foreground">Add a custom role for your company team.</p></div><Button onClick={() => setShowCreateRole((value) => !value)}>{showCreateRole ? "Close" : "Add role"}</Button></div>{showCreateRole && <div className="mt-4 flex max-w-xl gap-2"><Input placeholder="Role name e.g. Finance Controller" value={roleName} onChange={(event) => setRoleName(event.target.value)} /><Button onClick={createRole} disabled={!roleName.trim()}>Add role</Button></div>}</div>}
+
       <div className="flex gap-6">
         <div className="w-64 shrink-0 sticky top-4 self-start">
           <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl">
@@ -333,4 +352,3 @@ export default function RolesPermissionsPage() {
     </div>
   );
 }
-

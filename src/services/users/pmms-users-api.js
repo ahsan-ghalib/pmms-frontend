@@ -2,6 +2,7 @@ import axiosInstance from "@/lib/axios";
 import { unwrapData } from "@/lib/pmms";
 
 export const pmmsUsersApi = {
+  roles: async () => unwrapData((await axiosInstance.get("/roles")).data),
   list: async (params = {}) => unwrapData((await axiosInstance.get("/users", { params })).data),
   show: async (id) => unwrapData((await axiosInstance.get(`/users/${id}`)).data),
   create: async (payload) => (await axiosInstance.post("/users", payload)).data,

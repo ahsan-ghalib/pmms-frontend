@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { PhoneField, SelectField, SwitchField, TextField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { pmmsUsersApi } from "@/services/users/pmms-users-api";
 import { companiesApi } from "@/services/companies/companies-api";
@@ -38,6 +38,7 @@ export default function UserAccountForm({ user }) {
   const [companies, setCompanies] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [availableRoles, setAvailableRoles] = useState([]);
   const { control, handleSubmit, formState: { isSubmitting } } = useForm({
     defaultValues: {
       name: user?.name || "",
@@ -61,6 +62,7 @@ export default function UserAccountForm({ user }) {
       companiesApi.list().then((data) => setCompanies(Array.isArray(data) ? data : [])).catch(() => {});
     }
     platformApi.languages().then((data) => setLanguages(Array.isArray(data) ? data : [])).catch(() => {});
+    pmmsUsersApi.roles().then((data) => setAvailableRoles(Array.isArray(data) ? data : [])).catch(() => {});
   }, [isSuper]);
 
   useEffect(() => {
@@ -109,13 +111,13 @@ export default function UserAccountForm({ user }) {
         <TextField label="Name" name="name" control={control} validation={{ required: "Required" }} />
         <TextField label="Email" name="email" control={control} validation={{ required: "Required" }} />
         <TextField label="Username" name="username" control={control} />
-        <TextField label="Phone" name="phone" control={control} />
+        <Controller name="phone" control={control} render={({ field }) => <PhoneField {...field} label="Phone" defaultCountry={companies.find((company) => company.id === selectedCompanyId)?.country?.iso2 || "QA"} />} />
         <TextField label={user ? "Password (leave blank to keep)" : "Password"} name="password" type="password" control={control} validation={user ? {} : { required: "Required" }} />
         <SelectField
           label="Role"
           name="role"
           control={control}
-          options={isSuper ? [{ value: "super-admin", label: "Super Admin" }, ...ROLE_OPTIONS] : ROLE_OPTIONS}
+          options={(availableRoles.length ? availableRoles : ROLE_OPTIONS).filter((role) => (role.value || role.name) !== "tenant").map((role) => ({ value: role.value || role.name, label: role.label || role.display_name || role.name }))}
         />
         {isSuper && (
           <SelectField

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileField, SearchableEnumDropdown, SelectField, SwitchField, TextField } from "@/components/form-fields";
+import { FileField, PhoneField, SearchableEnumDropdown, SelectField, SwitchField, TextField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { tenantsApi } from "@/services/tenants/tenants-api";
 import { companiesApi } from "@/services/companies/companies-api";
@@ -143,7 +143,7 @@ export default function TenantForm({ tenant }) {
           )}
         />
         <TextField label={t("email", { defaultMessage: "Email address" })} name="email" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
-        <TextField label={t("mobile", { defaultMessage: "Mobile number" })} name="phone" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} />
+        <Controller name="phone" control={control} rules={{ required: t("required", { defaultMessage: "Required" }) }} render={({ field }) => <PhoneField {...field} label={t("mobile", { defaultMessage: "Mobile number" })} required defaultCountry={companies.find((company) => company.id === watch("company_id"))?.country?.iso2 || "QA"} />} />
         <TextField
           label={tenant ? t("password_optional", { defaultMessage: "Password (leave blank to keep)" }) : t("password", { defaultMessage: "Password" })}
           name="password"

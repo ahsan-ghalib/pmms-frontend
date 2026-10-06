@@ -70,6 +70,7 @@ const MODULE_ROLES = {
   subscriptions: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   trials: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   "platform-settings": [Roles.SUPER_ADMIN],
+  "property-types": [Roles.SUPER_ADMIN],
 };
 
 export function canSeeModule(role, module) {

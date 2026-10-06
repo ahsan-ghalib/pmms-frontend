@@ -27,4 +27,13 @@ export const platformApi = {
 
   settings: async () => unwrapData((await axiosInstance.get("/platform-settings")).data),
   updateSettings: async (payload) => unwrapData((await axiosInstance.put("/platform-settings", payload)).data),
+  propertyTypes: async () => unwrapData((await axiosInstance.get("/property-types")).data),
+  createPropertyType: async (payload) => unwrapData((await axiosInstance.post("/property-types", payload)).data),
+  updatePropertyType: async (id, payload) => unwrapData((await axiosInstance.put(`/property-types/${id}`, payload)).data),
+  deletePropertyType: async (id) => (await axiosInstance.delete(`/property-types/${id}`)).data,
+  companyModules: async (companyId) => unwrapData((await axiosInstance.get(`/companies/${companyId}/modules`)).data),
+  updateCompanyModules: async (companyId, modules) => unwrapData((await axiosInstance.put(`/companies/${companyId}/modules`, { modules })).data),
+  companyRoles: async () => unwrapData((await axiosInstance.get("/company-roles")).data),
+  companyRolePermissions: async () => unwrapData((await axiosInstance.get("/company-roles/permissions")).data),
+  createCompanyRole: async (payload) => unwrapData((await axiosInstance.post("/company-roles", payload)).data),
 };

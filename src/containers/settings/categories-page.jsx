@@ -44,6 +44,10 @@ export default function CategoriesPage() {
     return rows;
   }, [rows, filter]);
 
+  const roots = filtered.filter((row) => !row.parent_id);
+  const childrenOf = (id) => filtered.filter((row) => row.parent_id === id);
+  const CategoryRow = ({ row, depth = 0 }) => <div className="space-y-2" style={{ marginLeft: depth * 24 }}><div className="glass-panel flex flex-wrap items-center justify-between gap-4 rounded-2xl border-l-4 p-5" style={{ borderLeftColor: row.color || "#0EA5E9", backgroundImage: row.background_image ? `linear-gradient(rgba(255,255,255,.92), rgba(255,255,255,.92)), url(${row.background_image})` : undefined }}><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-xl" style={{ backgroundColor: row.color || "#0EA5E9" }} /><div><div className="flex items-center gap-2"><h3 className="text-lg font-semibold">{row.name_en}</h3><StatusBadge value={row.status} /></div><p className="text-sm text-slate-500">{row.name_ar} · {row.code} · Sort {row.sort_order}</p></div></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => router.push(`/settings/categories/${row.id}/edit`)}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit</Button>{row.status === "active" ? <Button size="sm" variant="outline" onClick={async () => { await complaintsApi.deactivateCategory(row.id); load(); }}>Deactivate</Button> : <Button size="sm" onClick={async () => { await complaintsApi.restoreCategory(row.id); load(); }}>Activate</Button>}</div></div>{childrenOf(row.id).map((child) => <CategoryRow key={child.id} row={child} depth={depth + 1} />)}</div>;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -96,7 +100,9 @@ export default function CategoriesPage() {
         />
       ) : (
         <div className="space-y-3">
-          {filtered.map((row) => (
+          {roots.map((row) => <CategoryRow key={row.id} row={row} />)}
+          {/* Legacy summary cards intentionally replaced by the hierarchical rows above. */}
+          {false && roots.map((row) => (
             <div key={row.id} className="glass-panel rounded-2xl p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>

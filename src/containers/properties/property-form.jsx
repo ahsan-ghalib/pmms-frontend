@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Landmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SearchableEnumDropdown, TextField, SelectField } from "@/components/form-fields";
+import { PhoneField, SearchableEnumDropdown, TextField, SelectField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { companiesApi } from "@/services/companies/companies-api";
 import { propertiesApi } from "@/services/properties/properties-api";
@@ -47,6 +47,7 @@ export default function PropertyForm({ property }) {
       name: property?.name || "",
       code: property?.code || "",
       type: property?.type || "villa",
+      property_type_id: property?.property_type_id || "",
       status: property?.status || "active",
       notes: property?.notes || "",
       contact_name: property?.contact?.name || "",
@@ -97,7 +98,8 @@ export default function PropertyForm({ property }) {
       company_id: values.company_id || undefined,
       name: values.name,
       code: values.code,
-      type: values.type,
+      type: types.find((item) => item.id === values.property_type_id)?.slug || values.type || null,
+      property_type_id: values.property_type_id,
       status: values.status,
       notes: values.notes || null,
       contact_name: values.contact_name || null,
@@ -159,10 +161,10 @@ export default function PropertyForm({ property }) {
         <div className="flex items-end gap-2"><div className="min-w-0 flex-1"><TextField label={t("code", { defaultMessage: "Code" })} name="code" control={control} errors={errors} validation={{ required: t("required", { defaultMessage: "Required" }) }} readOnly /></div><Button type="button" variant="outline" className="mb-4" onClick={() => setValue("code", childCode(selectedCompany?.code, propertyName), { shouldDirty: true, shouldValidate: true })}>{t("generate_code", { defaultMessage: "Generate Code" })}</Button></div>
         <SelectField
           label={t("type", { defaultMessage: "Type" })}
-          name="type"
+          name="property_type_id"
           control={control}
           errors={errors}
-          options={types.length ? types : FALLBACK_TYPES}
+          options={types.length ? types.map((item) => ({ value: item.id, label: item.name })) : FALLBACK_TYPES}
         />
         <SelectField
           label={t("status", { defaultMessage: "Status" })}
@@ -197,7 +199,7 @@ export default function PropertyForm({ property }) {
           <p className="mt-1 text-sm text-slate-500">{t("prop_contact_desc", { defaultMessage: "Site contact for technicians and supervisors." })}</p>
         </div>
         <TextField label={t("contact_name", { defaultMessage: "Contact name" })} name="contact_name" control={control} errors={errors} />
-        <TextField label={t("contact_phone", { defaultMessage: "Contact phone" })} name="contact_phone" control={control} errors={errors} />
+        <Controller name="contact_phone" control={control} render={({ field }) => <PhoneField {...field} label={t("contact_phone", { defaultMessage: "Contact phone" })} defaultCountry="QA" />} />
         <div className="md:col-span-2">
           <TextField label={t("contact_email", { defaultMessage: "Contact email" })} name="contact_email" control={control} errors={errors} />
         </div>
