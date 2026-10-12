@@ -9,6 +9,7 @@ export const checklistsApi = {
       ? (await axiosInstance.put(`/checklist-templates/${id}`, payload)).data
       : (await axiosInstance.post("/checklist-templates", payload)).data
   ),
+  reassign: async (id, payload) => unwrapData((await axiosInstance.post(`/checklist-templates/${id}/assign`, payload)).data),
   saveItem: async (templateId, payload) => unwrapData((await axiosInstance.post(`/checklist-templates/${templateId}/items`, payload)).data),
   updateItem: async (id, payload) => unwrapData((await axiosInstance.put(`/checklist-items/${id}`, payload)).data),
   setItemStatus: async (id, status) => unwrapData((await axiosInstance.patch(`/checklist-items/${id}/status`, { status })).data),
