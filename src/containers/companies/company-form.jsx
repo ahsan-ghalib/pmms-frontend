@@ -16,6 +16,7 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
 import { companyCode } from "@/lib/hierarchy-code";
+import CompanyCategoryPicker from "./company-category-picker";
 
 const TIMEZONES = [
   { value: "Asia/Qatar", label: "Asia/Qatar — Doha" },
@@ -38,6 +39,7 @@ export default function CompanyForm({ company }) {
   const [languages, setLanguages] = useState([]);
   const [plans, setPlans] = useState([]);
   const [countries, setCountries] = useState([]);
+  const [categorySelection, setCategorySelection] = useState({});
   const { control, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       name: company?.name || "",
@@ -108,6 +110,7 @@ export default function CompanyForm({ company }) {
         phone: values.admin_phone || null,
         password: values.admin_password,
       };
+      payload.categories = Object.entries(categorySelection).map(([id, services]) => ({ id, services }));
     }
 
     try {
@@ -286,6 +289,18 @@ export default function CompanyForm({ company }) {
                 )}
               </div>
             )}
+          </section>
+
+          <section className="glass-panel space-y-4 rounded-2xl p-6">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-300">
+                {t("categories_services", { defaultMessage: "Categories & services" })}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
+                {t("company_categories_assign_desc", { defaultMessage: "Assign master categories and the services this company offers." })}
+              </h2>
+            </div>
+            <CompanyCategoryPicker value={categorySelection} onChange={setCategorySelection} />
           </section>
 
           <section className="glass-panel space-y-4 rounded-2xl p-6">

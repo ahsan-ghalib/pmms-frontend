@@ -3,13 +3,12 @@
 import { usePathname } from "next/navigation";
 import { Lock } from "lucide-react";
 import { usePlanAccess } from "@/hooks/use-plan-access";
-import { featureForPath } from "@/lib/permissions/plan-features";
 import { useT } from "@/lib/use-t";
 
 export default function PlanAccessGuard({ children }) {
   const pathname = usePathname();
   const t = useT("common");
-  const { canUsePath, lockedMessage } = usePlanAccess();
+  const { canUsePath, featureForPath, lockedMessage } = usePlanAccess();
   const feature = featureForPath(pathname);
 
   if (!feature || canUsePath(pathname)) {

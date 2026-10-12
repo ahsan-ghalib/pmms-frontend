@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import SuperAdminOnly from "@/components/pmms/super-admin-only";
 import ServiceForm from "@/containers/settings/service-form";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError } from "@/lib/pmms";
 
-export default function EditServicePage() {
+function EditServicePageContent() {
   const { id } = useParams();
   const [service, setService] = useState(null);
 
@@ -28,5 +29,13 @@ export default function EditServicePage() {
       ]} />
       <ServiceForm service={service} />
     </div>
+  );
+}
+
+export default function EditServicePage() {
+  return (
+    <SuperAdminOnly redirectTo="/settings/categories">
+      <EditServicePageContent />
+    </SuperAdminOnly>
   );
 }

@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import SuperAdminOnly from "@/components/pmms/super-admin-only";
 import CategoryForm from "@/containers/settings/category-form";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError } from "@/lib/pmms";
 
-export default function EditCategoryPage() {
+function EditCategoryPageContent() {
   const { id } = useParams();
   const [category, setCategory] = useState(null);
 
@@ -28,5 +29,13 @@ export default function EditCategoryPage() {
       ]} />
       <CategoryForm category={category} />
     </div>
+  );
+}
+
+export default function EditCategoryPage() {
+  return (
+    <SuperAdminOnly redirectTo="/settings/categories">
+      <EditCategoryPageContent />
+    </SuperAdminOnly>
   );
 }

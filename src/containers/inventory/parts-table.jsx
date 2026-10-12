@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Package, Plus, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, Eye, Package, Plus, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/common/data-table";
@@ -113,7 +113,12 @@ export default function PartsTable() {
       id: "actions",
       header: () => <div className="text-right">{t("actions", { defaultMessage: "Actions" })}</div>,
       cell: ({ row }) => (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          {canCreate && (
+            <Button variant="outline" size="sm" onClick={() => router.push(`/inventory/parts/${row.original.id}/stock`)}>
+              <ArrowLeftRight className="mr-2 h-4 w-4" /> {t("manage_stock", { defaultMessage: "Manage stock" })}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => router.push(`/inventory/parts/${row.original.id}`)}>
             <Eye className="mr-2 h-4 w-4" /> {t("open", { defaultMessage: "Open" })}
           </Button>

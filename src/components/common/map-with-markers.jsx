@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Polyline } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Polyline } from "@react-google-maps/api";
+import { useGoogleMaps } from "@/lib/google-maps";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function MapWithMarkers({
@@ -16,10 +17,7 @@ export default function MapWithMarkers({
   renderInfoWindow, // Function that takes (markerData, onClose) and returns React Node
   path = [],
 }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "", // Ensure this is set in .env.local
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   const [map, setMap] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(center || { lat: 25.2048, lng: 55.2708 }); // Default Dubai

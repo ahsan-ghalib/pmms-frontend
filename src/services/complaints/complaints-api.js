@@ -24,6 +24,8 @@ export const complaintsApi = {
   },
   deactivateCategory: async (id) => (await axiosInstance.delete(`/categories/${id}`)).data,
   restoreCategory: async (id) => (await axiosInstance.post(`/categories/${id}/restore`)).data,
+  categoryCatalog: async (params = {}) => unwrapData((await axiosInstance.get("/category-catalog", { params })).data),
+  saveCategorySelection: async (masterId, payload) => unwrapData((await axiosInstance.put(`/category-catalog/${masterId}`, payload)).data),
   services: async (params = {}) => unwrapData((await axiosInstance.get("/services", { params })).data),
   service: async (id) => unwrapData((await axiosInstance.get(`/services/${id}`)).data),
   createService: async (categoryId, payload) => unwrapData((await axiosInstance.post(`/categories/${categoryId}/services`, payload)).data),

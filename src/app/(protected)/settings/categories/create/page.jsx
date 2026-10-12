@@ -1,9 +1,10 @@
 "use client";
 
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import SuperAdminOnly from "@/components/pmms/super-admin-only";
 import CategoryForm from "@/containers/settings/category-form";
 
-export default function CreateCategoryPage() {
+function CreateCategoryPageContent() {
   return (
     <div className="space-y-6">
       <BreadcrumbComponent data={[
@@ -12,5 +13,13 @@ export default function CreateCategoryPage() {
       ]} />
       <CategoryForm />
     </div>
+  );
+}
+
+export default function CreateCategoryPage() {
+  return (
+    <SuperAdminOnly redirectTo="/settings/categories">
+      <CreateCategoryPageContent />
+    </SuperAdminOnly>
   );
 }

@@ -46,6 +46,8 @@ export const authOptions = {
           return null;
         } catch (error) {
           console.error("Login failed:", error.response?.data || error.message);
+          const { code, message } = error.response?.data || {};
+          if (code && code !== "invalid_credentials" && message) throw new Error(message);
           return null;
         }
       },

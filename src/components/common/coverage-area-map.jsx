@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, memo } from "react";
-import { GoogleMap, useJsApiLoader, DrawingManager, Polygon, Circle, Rectangle } from "@react-google-maps/api";
+import { GoogleMap, DrawingManager, Polygon, Circle, Rectangle } from "@react-google-maps/api";
+import { useGoogleMaps } from "@/lib/google-maps";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Trash2, Save, Loader2, Circle as CircleIcon, Square, Hexagon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const LIBRARIES = ["drawing", "geometry", "places"];
 
 function CoverageAreaMap({
   outlet,
@@ -18,11 +17,7 @@ function CoverageAreaMap({
   showSaveButton = true,
   readOnly = false,
 }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: LIBRARIES,
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   const [map, setMap] = useState(null);
   const [drawnShapes, setDrawnShapes] = useState([]);

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TextField, SelectField, TextareaField } from "@/components/form-fields";
+import { DateField, SelectField, TextareaField, TimeField } from "@/components/form-fields";
 import PageHeader from "@/components/pmms/page-header";
 import { workOrdersApi } from "@/services/work-orders/work-orders-api";
 import { propertiesApi } from "@/services/properties/properties-api";
@@ -15,13 +15,16 @@ import { assetsApi } from "@/services/assets/assets-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 
+const withSeconds = (time) => (time ? (time.length === 5 ? `${time}:00` : time) : undefined);
+
 export default function WorkOrderForm() {
+  const today = new Date().toISOString().slice(0, 10);
   const t = useT("common");
   const router = useRouter();
   const [properties, setProperties] = useState([]);
   const [categories, setCategories] = useState([]);
   const [assets, setAssets] = useState([]);
-  const { control, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+  const { control, register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       property_id: "",
       asset_id: "",
@@ -59,8 +62,9 @@ export default function WorkOrderForm() {
       const created = await workOrdersApi.create({
         ...values,
         asset_id: values.asset_id || undefined,
-        scheduled_start_time: values.scheduled_start_time || undefined,
-        scheduled_end_time: values.scheduled_end_time || undefined,
+        scheduled_date: values.scheduled_date || undefined,
+        scheduled_start_time: withSeconds(values.scheduled_start_time),
+        scheduled_end_time: withSeconds(values.scheduled_end_time),
       });
       toast.success("Work order created");
       router.push(`/work-orders/${created.data?.id || ""}`);
@@ -79,9 +83,19 @@ export default function WorkOrderForm() {
         <SelectField label="Category" name="category_id" control={control} errors={errors} validation={{ required: "Required" }} options={categories.map((item) => ({ value: item.id, label: item.name_en }))} />
         <SelectField label="Service" name="service_id" control={control} errors={errors} validation={{ required: "Required" }} options={services.map((item) => ({ value: item.id, label: item.name_en }))} />
         <SelectField label="Priority" name="priority" control={control} errors={errors} options={[{ value: "normal", label: "Normal" }, { value: "urgent", label: "Urgent" }]} />
-        <TextField label="Scheduled date" name="scheduled_date" control={control} errors={errors} placeholder="YYYY-MM-DD" />
-        <TextField label="Start time" name="scheduled_start_time" control={control} errors={errors} placeholder="09:00:00" />
-        <TextField label="End time" name="scheduled_end_time" control={control} errors={errors} placeholder="10:00:00" />
+        <DateField label="Scheduled date" name="scheduled_date" register={register} errors={errors} min={today} />
+        <div className="grid grid-cols-2 gap-4">
+          <TimeField label="Start time" name="scheduled_start_time" register={register} errors={errors} />
+          <TimeField
+            label="End time"
+            name="scheduled_end_time"
+            register={register}
+            errors={errors}
+            validation={{
+              validate: (value, form) => !value || !form.scheduled_start_time || value > form.scheduled_start_time || "End time must be after start time",
+            }}
+          />
+        </div>
         <div className="md:col-span-2">
           <TextareaField label="Description" name="description" control={control} errors={errors} />
         </div>

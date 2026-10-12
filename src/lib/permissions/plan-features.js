@@ -20,6 +20,7 @@ export const MODULE_FEATURES = {
   tenants: "tenants-portal",
   "asset-categories": "assets",
   "part-categories": "inventory",
+  "stock-locations": "inventory",
   sla: "sla",
   "notification-settings": "notifications",
   "checklist-settings": "checklists",
@@ -49,6 +50,7 @@ const PATH_FEATURES = [
   ["/tenants", "tenants-portal"],
   ["/settings/asset-categories", "assets"],
   ["/settings/part-categories", "inventory"],
+  ["/settings/stock-locations", "inventory"],
   ["/settings/sla", "sla"],
   ["/settings/notifications", "notifications"],
   ["/settings/checklists", "checklists"],
@@ -63,16 +65,21 @@ export function featureForModule(module) {
   return MODULE_FEATURES[module] || null;
 }
 
-export function featureForPath(pathname) {
+export function featureForPath(pathname, entitlements) {
   if (!pathname) return null;
-  const match = PATH_FEATURES.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const paths = Array.isArray(entitlements?.feature_paths) && entitlements.feature_paths.length
+    ? entitlements.feature_paths
+    : PATH_FEATURES;
+  const match = paths.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   return match?.[1] || null;
 }
 
 export function hasPlanFeature(entitlements, feature) {
   if (!feature) return true;
   if (!entitlements) return true;
-  if (entitlements.scope === "platform" || entitlements.all_features) return true;
+  if (entitlements.scope === "platform") return true;
+  if ((entitlements.inactive_features || []).includes(feature)) return false;
+  if (entitlements.all_features) return true;
   return (entitlements.features || []).includes(feature);
 }
 

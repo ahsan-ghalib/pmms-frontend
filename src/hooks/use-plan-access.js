@@ -15,7 +15,8 @@ export function usePlanAccess() {
 
   const canUseFeature = (feature) => hasPlanFeature(entitlements, feature);
   const canUseModule = (module) => canUseFeature(featureForModule(module));
-  const canUsePath = (pathname) => canUseFeature(featureForPath(pathname));
+  const pathFeature = (pathname) => featureForPath(pathname, entitlements);
+  const canUsePath = (pathname) => canUseFeature(pathFeature(pathname));
 
   const warnLocked = () => {
     toast.error(lockedMessage(entitlements));
@@ -36,6 +37,7 @@ export function usePlanAccess() {
     canUseFeature,
     canUseModule,
     canUsePath,
+    featureForPath: pathFeature,
     warnLocked,
     guardNavigation,
     lockedMessage: lockedMessage(entitlements),

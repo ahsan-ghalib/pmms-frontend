@@ -33,6 +33,7 @@ const MODULE_ROLES = {
   inventory: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   "purchase-requests": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   "part-categories": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR],
+  "stock-locations": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR],
   sla: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   "sla-report": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   reports: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
@@ -61,7 +62,7 @@ const MODULE_ROLES = {
   "live-map": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER, Roles.SUPERVISOR],
   "maintenance-schedules": [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR],
   categories: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
-  services: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
+  services: [Roles.SUPER_ADMIN],
   settings: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   calendar: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   roles: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
@@ -71,6 +72,7 @@ const MODULE_ROLES = {
   trials: [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN],
   "platform-settings": [Roles.SUPER_ADMIN],
   "property-types": [Roles.SUPER_ADMIN],
+  "plan-features": [Roles.SUPER_ADMIN],
 };
 
 export function canSeeModule(role, module) {

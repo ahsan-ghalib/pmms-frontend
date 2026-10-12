@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Package, Pencil, ShoppingCart } from "lucide-react";
+import { ArrowLeftRight, Package, Pencil, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/pmms/page-header";
 import { StatusBadge } from "@/components/pmms/status-badge";
@@ -49,6 +49,11 @@ export default function PartDetails() {
         description={part.sku}
         actions={
           <div className="flex flex-wrap gap-2">
+            {canManage && (
+              <Button variant="outline" onClick={() => router.push(`/inventory/parts/${part.id}/stock`)}>
+                <ArrowLeftRight className="mr-2 h-4 w-4" /> {t("manage_stock", { defaultMessage: "Manage stock" })}
+              </Button>
+            )}
             {canManage && (
               <Button variant="outline" onClick={() => router.push(`/inventory/parts/${part.id}/edit`)}>
                 <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}

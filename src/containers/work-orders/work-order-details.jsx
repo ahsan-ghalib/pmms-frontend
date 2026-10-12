@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PartLines, { EMPTY_LINE, validLines } from "@/components/inventory/part-lines";
 import PageHeader from "@/components/pmms/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import ReasonDialog from "@/components/pmms/reason-dialog";
@@ -49,6 +51,8 @@ export default function WorkOrderDetails() {
   const [assetCode, setAssetCode] = useState("");
   const [partForm, setPartForm] = useState({ part_id: "", quantity: "1", stock_location_id: "", reason: "Parts Required" });
   const [duty, setDuty] = useState(null);
+  const [handStock, setHandStock] = useState({ technician: null, items: [] });
+  const [addPart, setAddPart] = useState(null);
 
   const load = async () => {
     try {
@@ -122,6 +126,47 @@ export default function WorkOrderDetails() {
 
   const services = categories.find((category) => category.id === taxonomy.category_id)?.services || [];
 
+  const openAddPart = async () => {
+    setAddPart({ tab: "hand", handLines: [{ ...EMPTY_LINE }], requestLines: [{ ...EMPTY_LINE }], reason: "Parts Required", hold: true, saving: false });
+    setDialog("add-part");
+    try {
+      const data = await workOrdersApi.handStock(workOrder.id);
+      setHandStock({ technician: data?.technician || null, items: data?.items || [] });
+      if (!(data?.items || []).length) setAddPart((current) => current && { ...current, tab: "request" });
+    } catch {
+      setHandStock({ technician: null, items: [] });
+    }
+  };
+
+  const submitAddPart = async () => {
+    const fromHand = addPart.tab === "hand";
+    const items = validLines(fromHand ? addPart.handLines : addPart.requestLines);
+    if (items.length === 0) {
+      toast.error("Add at least one part with a quantity");
+      return;
+    }
+    if (!fromHand && !addPart.reason.trim()) {
+      toast.error("A reason is required");
+      return;
+    }
+    setAddPart((current) => ({ ...current, saving: true }));
+    try {
+      if (fromHand) {
+        await workOrdersApi.useHandStock(workOrder.id, { items });
+        toast.success("Parts added from hand stock");
+      } else {
+        await workOrdersApi.requestParts(workOrder.id, { reason: addPart.reason.trim(), hold: addPart.hold, items });
+        toast.success(addPart.hold ? "Parts requested · work order on hold" : "Parts requested");
+      }
+      setDialog(null);
+      setAddPart(null);
+      load();
+    } catch (error) {
+      toast.error(apiError(error, "Action failed"));
+      setAddPart((current) => current && { ...current, saving: false });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -165,7 +210,7 @@ export default function WorkOrderDetails() {
         {canStart && <Button onClick={() => run(() => workOrdersApi.start(workOrder.id), "Work started")}>Start work</Button>}
         {canAct && ["assigned", "in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("photos")}>Photos</Button>}
         {canAct && workOrder.status !== "on_hold" && <Button variant="outline" onClick={() => setDialog("hold")}>On hold</Button>}
-        {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("parts")}>Request parts</Button>}
+        {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={openAddPart}>Add part</Button>}
         {manager && !closed && <Button variant="outline" onClick={() => setDialog("issue")}>Issue parts</Button>}
         {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("usage")}>Record usage</Button>}
         {canAct && workOrder.status === "on_hold" && <Button onClick={() => run(() => workOrdersApi.resume(workOrder.id), "Resumed")}>Resume</Button>}
@@ -220,7 +265,18 @@ export default function WorkOrderDetails() {
         </div>
         <div className="rounded-2xl border bg-white/60 p-5 space-y-3">
           <p className="font-semibold">Parts</p>
-          {(workOrder.part_requests || []).length === 0 && <p className="text-sm text-slate-500">No part requests yet.</p>}
+          {(workOrder.part_usages || []).length > 0 && (
+            <div className="space-y-1.5 rounded-xl border p-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Used on this work order</p>
+              {workOrder.part_usages.map((usage) => (
+                <div key={usage.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span>{usage.part_name || usage.sku} <span className="text-slate-500">× {usage.quantity}</span></span>
+                  <StatusBadge value={usage.source === "hand_stock" ? "hand stock" : "inventory"} />
+                </div>
+              ))}
+            </div>
+          )}
+          {(workOrder.part_requests || []).length === 0 && (workOrder.part_usages || []).length === 0 && <p className="text-sm text-slate-500">No parts added yet.</p>}
           {(workOrder.part_requests || []).map((request) => (
             <div key={request.id} className="border rounded-xl p-3 space-y-2">
               <div className="flex justify-between gap-2">
@@ -419,24 +475,58 @@ export default function WorkOrderDetails() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={dialog === "parts"} onOpenChange={() => setDialog(null)}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle>Request parts</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-500">A reason is required. This places the work order on hold and notifies the supervisor.</p>
-          <div className="space-y-3">
-            <Textarea required placeholder="Reason" value={partForm.reason} onChange={(event) => setPartForm((current) => ({ ...current, reason: event.target.value }))} />
-            <select className="w-full border rounded-md h-10 px-3" value={partForm.part_id} onChange={(event) => setPartForm((current) => ({ ...current, part_id: event.target.value }))}>
-              <option value="">Select part</option>
-              {catalog.parts.map((part) => <option key={part.id} value={part.id}>{part.name} ({part.sku})</option>)}
-            </select>
-            <Input type="number" min="0.001" step="0.001" value={partForm.quantity} onChange={(event) => setPartForm((current) => ({ ...current, quantity: event.target.value }))} />
-          </div>
+      <Dialog open={dialog === "add-part" && Boolean(addPart)} onOpenChange={(open) => { if (!open) { setDialog(null); setAddPart(null); } }}>
+        <DialogContent className="rounded-2xl sm:max-w-lg">
+          <DialogHeader><DialogTitle>Add part</DialogTitle></DialogHeader>
+          {addPart && (
+            <Tabs value={addPart.tab} onValueChange={(tab) => setAddPart((current) => ({ ...current, tab }))}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="hand">From hand stock</TabsTrigger>
+                <TabsTrigger value="request">Request from inventory</TabsTrigger>
+              </TabsList>
+              <TabsContent value="hand" className="space-y-3 pt-3">
+                <p className="text-sm text-slate-500">
+                  Parts carried by {handStock.technician?.name || "the technician"}. They are added to this work order and deducted from hand stock.
+                </p>
+                <PartLines
+                  options={handStock.items.map((item) => ({ id: item.part_id, label: `${item.name} (${item.sku})`, max: item.quantity }))}
+                  lines={addPart.handLines}
+                  onChange={(handLines) => setAddPart((current) => ({ ...current, handLines }))}
+                  emptyText="No parts in hand stock. Use Request from inventory."
+                />
+                {handStock.items.length > 0 && (
+                  <p className="text-xs text-slate-500">
+                    Part not in hand stock?{" "}
+                    <button type="button" className="font-medium text-violet-600 underline" onClick={() => setAddPart((current) => ({ ...current, tab: "request" }))}>Request it from inventory</button>
+                  </p>
+                )}
+              </TabsContent>
+              <TabsContent value="request" className="space-y-3 pt-3">
+                <p className="text-sm text-slate-500">Submitted to the supervisor for approval, then issued by inventory.</p>
+                <PartLines
+                  options={catalog.parts.map((part) => ({ id: part.id, label: `${part.name} (${part.sku})` }))}
+                  lines={addPart.requestLines}
+                  onChange={(requestLines) => setAddPart((current) => ({ ...current, requestLines }))}
+                  emptyText="No parts in the parts master yet."
+                />
+                <Textarea placeholder="Reason" value={addPart.reason} onChange={(event) => setAddPart((current) => ({ ...current, reason: event.target.value }))} />
+                {workOrder.status !== "on_hold" && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={addPart.hold} onChange={(event) => setAddPart((current) => ({ ...current, hold: event.target.checked }))} />
+                    Put work order On Hold – Parts Required
+                  </label>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialog(null)}>Cancel</Button>
-            <Button onClick={() => run(() => workOrdersApi.requestParts(workOrder.id, {
-              reason: partForm.reason || "Parts Required",
-              items: [{ part_id: partForm.part_id, quantity: Number(partForm.quantity) }],
-            }), "Parts requested")}>Request and hold</Button>
+            <Button variant="outline" onClick={() => { setDialog(null); setAddPart(null); }}>Cancel</Button>
+            <Button
+              disabled={!addPart || addPart.saving || (addPart.tab === "hand" && handStock.items.length === 0)}
+              onClick={submitAddPart}
+            >
+              {addPart?.tab === "hand" ? "Add to work order" : addPart?.hold && workOrder.status !== "on_hold" ? "Request and hold" : "Submit request"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

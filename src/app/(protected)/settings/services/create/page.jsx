@@ -1,9 +1,10 @@
 "use client";
 
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import SuperAdminOnly from "@/components/pmms/super-admin-only";
 import ServiceForm from "@/containers/settings/service-form";
 
-export default function CreateServicePage() {
+function CreateServicePageContent() {
   return (
     <div className="space-y-6">
       <BreadcrumbComponent data={[
@@ -12,5 +13,13 @@ export default function CreateServicePage() {
       ]} />
       <ServiceForm />
     </div>
+  );
+}
+
+export default function CreateServicePage() {
+  return (
+    <SuperAdminOnly redirectTo="/settings/categories">
+      <CreateServicePageContent />
+    </SuperAdminOnly>
   );
 }

@@ -135,7 +135,7 @@ export default function PurchaseRequestForm({ purchaseRequest }) {
         </div>
         <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
           <div><p className="text-sm font-semibold">Select {requestType === "asset" ? "asset" : "part"} items</p><p className="text-xs text-slate-500">Search inside each selector by name or code.</p></div>
-          <SearchableEnumDropdown name="pr-category" label="Category" placeholder="All categories" searchPlaceholder="Search categories..." value={categoryId} onChange={setCategoryId} options={categoryOptions} className="mb-0" />
+          <SearchableEnumDropdown name="pr-category" label="Category" placeholder="All categories" searchPlaceholder="Search categories..." value={categoryId} onChange={setCategoryId} options={categoryOptions} className="mb-4" />
           {items.map((item, index) => (
             <div key={index} className="grid items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-12 dark:border-white/10 dark:bg-slate-950/30">
               {requestType === "asset" ? <div className="md:col-span-5"><SearchableEnumDropdown name={`asset-${index}`} placeholder="Select asset" searchPlaceholder="Search assets..." value={item.asset_id} onChange={(value) => setItems((current) => current.map((row, i) => i === index ? { ...row, asset_id: value } : row))} options={visibleAssets().map((asset) => ({ value: asset.id, label: `${asset.name_en || asset.name} (${asset.code || asset.asset_code || "—"})`, searchText: `${asset.name_en || asset.name || ""} ${asset.code || asset.asset_code || ""}`.toLowerCase() }))} className="mb-0" /><select

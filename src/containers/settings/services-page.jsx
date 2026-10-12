@@ -24,7 +24,7 @@ export default function ServicesPage() {
 
   const load = async () => {
     try {
-      const [services, cats] = await Promise.all([complaintsApi.services(), complaintsApi.categories()]);
+      const [services, cats] = await Promise.all([complaintsApi.services({ scope: "master" }), complaintsApi.categories({ scope: "master" })]);
       setRows(Array.isArray(services) ? services : []);
       setCategories(Array.isArray(cats) ? cats : []);
     } catch (error) {
@@ -54,8 +54,8 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <PageHeader
         icon={Wrench}
-        title={t("services_title", { defaultMessage: "Services" })}
-        description={t("services_desc", { defaultMessage: "Services belong to a category and appear on complaints and work orders." })}
+        title={t("master_services_title", { defaultMessage: "Master services" })}
+        description={t("master_services_desc", { defaultMessage: "Platform-wide services under each master category. Companies enable the ones they offer." })}
         actions={
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/settings/services/create")}>
             <Plus className="mr-2 h-4 w-4" /> {t("new_service", { defaultMessage: "New service" })}

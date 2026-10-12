@@ -1,10 +1,11 @@
 "use client";
 
 import { BreadcrumbComponent } from "@/components/common/breadcrumb-component";
+import SuperAdminOnly from "@/components/pmms/super-admin-only";
 import ServicesPage from "@/containers/settings/services-page";
 import { useT } from "@/lib/use-t";
 
-export default function ServicesSettingsPage() {
+function ServicesSettingsPageContent() {
   const t = useT("common");
   return (
     <div className="space-y-6">
@@ -14,5 +15,13 @@ export default function ServicesSettingsPage() {
       ]} />
       <ServicesPage />
     </div>
+  );
+}
+
+export default function ServicesSettingsPage() {
+  return (
+    <SuperAdminOnly redirectTo="/settings/categories">
+      <ServicesSettingsPageContent />
+    </SuperAdminOnly>
   );
 }

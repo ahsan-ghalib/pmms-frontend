@@ -38,8 +38,6 @@ import { CategoryBars, SimpleBars, StatusDonut, VolumeChart } from "@/containers
 import ExpiryCountdown from "@/components/pmms/expiry-countdown";
 import PlanFeatureGrid from "@/containers/dashboard/plan-feature-grid";
 import { usePlanAccess } from "@/hooks/use-plan-access";
-import { featureForPath } from "@/lib/permissions/plan-features";
-
 const EMPTY = {
   scope: "assigned",
   flags: {},
@@ -109,7 +107,7 @@ export default function PmmsDashboard() {
   const router = useRouter();
   const { data: session } = useSession();
   const role = normalizeRole(session?.user?.role);
-  const { canUsePath, warnLocked } = usePlanAccess();
+  const { canUsePath, featureForPath, warnLocked } = usePlanAccess();
   const [payload, setPayload] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({});

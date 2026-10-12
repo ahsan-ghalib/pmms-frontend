@@ -9,6 +9,13 @@ export const platformApi = {
 
   plans: async () => unwrapData((await axiosInstance.get("/subscription-plans")).data),
   plan: async (id) => unwrapData((await axiosInstance.get(`/subscription-plans/${id}`)).data),
+  featureCatalog: async () => unwrapData((await axiosInstance.get("/plan-feature-catalog")).data),
+  createFeatureGroup: async (payload) => unwrapData((await axiosInstance.post("/plan-feature-groups", payload)).data),
+  updateFeatureGroup: async (id, payload) => unwrapData((await axiosInstance.put(`/plan-feature-groups/${id}`, payload)).data),
+  deleteFeatureGroup: async (id) => unwrapData((await axiosInstance.delete(`/plan-feature-groups/${id}`)).data),
+  createFeature: async (payload) => unwrapData((await axiosInstance.post("/plan-features", payload)).data),
+  updateFeature: async (id, payload) => unwrapData((await axiosInstance.put(`/plan-features/${id}`, payload)).data),
+  deleteFeature: async (id) => unwrapData((await axiosInstance.delete(`/plan-features/${id}`)).data),
   planFeatures: async () => unwrapData((await axiosInstance.get("/subscription-plans/features")).data),
   createPlan: async (payload) => unwrapData((await axiosInstance.post("/subscription-plans", payload)).data),
   updatePlan: async (id, payload) => unwrapData((await axiosInstance.put(`/subscription-plans/${id}`, payload)).data),

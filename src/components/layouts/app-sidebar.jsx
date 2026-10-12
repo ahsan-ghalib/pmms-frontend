@@ -51,7 +51,8 @@ export function useNavItems() {
       icon: Package,
       module: "inventory",
       items: [
-        { title: t("sidebar_parts", { defaultMessage: "Parts" }), url: "/inventory", module: "inventory" },
+        { title: t("sidebar_parts_master", { defaultMessage: "Parts master" }), url: "/inventory", module: "inventory" },
+        { title: t("sidebar_hand_stock", { defaultMessage: "Technician hand stock" }), url: "/inventory/hand-stock", module: "inventory" },
         { title: t("sidebar_stock_logs", { defaultMessage: "Stock logs" }), url: "/inventory/stock", module: "inventory" },
         { title: t("sidebar_purchase_requests", { defaultMessage: "Purchase requests" }), url: "/inventory/purchase-requests", module: "purchase-requests" },
       ],
@@ -75,6 +76,7 @@ export function useNavItems() {
       items: [
         { title: t("sidebar_languages", { defaultMessage: "Languages" }), url: "/languages", module: "languages" },
         { title: t("sidebar_subscriptions", { defaultMessage: "Subscriptions" }), url: "/subscriptions", module: "subscriptions" },
+        { title: t("sidebar_plan_features", { defaultMessage: "Plan Features" }), url: "/plan-features", module: "plan-features" },
         { title: t("sidebar_trials", { defaultMessage: "Trials" }), url: "/trials", module: "trials" },
         { title: t("sidebar_platform_settings", { defaultMessage: "Platform Settings" }), url: "/platform-settings", module: "platform-settings" },
         { title: t("sidebar_property_types", { defaultMessage: "Property Types" }), url: "/property-types", module: "property-types" },
@@ -100,6 +102,7 @@ export function useNavItems() {
         { title: t("sidebar_categories", { defaultMessage: "Categories" }), url: "/settings/categories", module: "categories" },
         { title: t("sidebar_asset_categories", { defaultMessage: "Asset categories" }), url: "/settings/asset-categories", module: "asset-categories" },
         { title: t("sidebar_part_categories", { defaultMessage: "Part categories" }), url: "/settings/part-categories", module: "part-categories" },
+        { title: t("sidebar_stock_locations", { defaultMessage: "Stock locations" }), url: "/settings/stock-locations", module: "stock-locations" },
         { title: t("sidebar_sla", { defaultMessage: "SLA policies" }), url: "/settings/sla", module: "sla" },
         { title: t("sidebar_notification_settings", { defaultMessage: "Notification templates" }), url: "/settings/notifications", module: "notification-settings" },
         { title: t("sidebar_checklist_settings", { defaultMessage: "Daily checklists" }), url: "/settings/checklists", module: "checklist-settings" },

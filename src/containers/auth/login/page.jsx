@@ -89,7 +89,7 @@ export default function LoginForm() {
         if (res.error === "CredentialsSignin") {
           toast.error(t("Login_Invalid_Credentials"));
         } else {
-          toast.error(t("Login_Failed"));
+          toast.error(res.error || t("Login_Failed"));
         }
       }
     } catch (error) {

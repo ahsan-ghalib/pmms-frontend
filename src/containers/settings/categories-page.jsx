@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Layers3, Pencil, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/pmms/page-header";
 import EmptyState from "@/components/pmms/empty-state";
@@ -13,8 +14,17 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
+import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import CategoryCatalog from "./category-catalog";
 
 export default function CategoriesPage() {
+  const role = normalizeRole(useSession().data?.user?.role);
+
+  if (!role) return null;
+  return role === Roles.SUPER_ADMIN ? <MasterCategoriesPage /> : <CategoryCatalog />;
+}
+
+function MasterCategoriesPage() {
   const t = useT("common");
   const router = useRouter();
   const [rows, setRows] = useState([]);
@@ -22,7 +32,7 @@ export default function CategoriesPage() {
 
   const load = async () => {
     try {
-      const data = await complaintsApi.categories();
+      const data = await complaintsApi.categories({ scope: "master" });
       setRows(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(apiError(error, t("categories_load_failed", { defaultMessage: "Failed to load categories" })));
@@ -44,16 +54,58 @@ export default function CategoriesPage() {
     return rows;
   }, [rows, filter]);
 
-  const roots = filtered.filter((row) => !row.parent_id);
+  const toggleStatus = async (row) => {
+    try {
+      if (row.status === "active") {
+        await complaintsApi.deactivateCategory(row.id);
+        toast.success(t("category_deactivated", { defaultMessage: "Category deactivated" }));
+      } else {
+        await complaintsApi.restoreCategory(row.id);
+        toast.success(t("category_activated", { defaultMessage: "Category activated" }));
+      }
+      load();
+    } catch (error) {
+      toast.error(apiError(error, t("category_save_failed", { defaultMessage: "Unable to save category" })));
+    }
+  };
+
+  const roots = filtered.filter((row) => !row.parent_id || !filtered.some((item) => item.id === row.parent_id));
   const childrenOf = (id) => filtered.filter((row) => row.parent_id === id);
-  const CategoryRow = ({ row, depth = 0 }) => <div className="space-y-2" style={{ marginLeft: depth * 24 }}><div className="glass-panel flex flex-wrap items-center justify-between gap-4 rounded-2xl border-l-4 p-5" style={{ borderLeftColor: row.color || "#0EA5E9", backgroundImage: row.background_image ? `linear-gradient(rgba(255,255,255,.92), rgba(255,255,255,.92)), url(${row.background_image})` : undefined }}><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-xl" style={{ backgroundColor: row.color || "#0EA5E9" }} /><div><div className="flex items-center gap-2"><h3 className="text-lg font-semibold">{row.name_en}</h3><StatusBadge value={row.status} /></div><p className="text-sm text-slate-500">{row.name_ar} · {row.code} · Sort {row.sort_order}</p></div></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => router.push(`/settings/categories/${row.id}/edit`)}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit</Button>{row.status === "active" ? <Button size="sm" variant="outline" onClick={async () => { await complaintsApi.deactivateCategory(row.id); load(); }}>Deactivate</Button> : <Button size="sm" onClick={async () => { await complaintsApi.restoreCategory(row.id); load(); }}>Activate</Button>}</div></div>{childrenOf(row.id).map((child) => <CategoryRow key={child.id} row={child} depth={depth + 1} />)}</div>;
+
+  const CategoryRow = ({ row, depth = 0 }) => (
+    <div className="space-y-2" style={{ marginLeft: depth * 24 }}>
+      <div className="glass-panel flex flex-wrap items-center justify-between gap-4 rounded-2xl border-l-4 p-5" style={{ borderLeftColor: row.color || "#0EA5E9" }}>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl" style={{ backgroundColor: row.color || "#0EA5E9" }} />
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">{row.name_en}</h3>
+              <StatusBadge value={row.status} />
+            </div>
+            <p className="text-sm text-slate-500">
+              {row.name_ar} · {row.code} · {row.services_count ?? 0} {t("services", { defaultMessage: "services" })}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => router.push(`/settings/categories/${row.id}/edit`)}>
+            <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
+          </Button>
+          <Button size="sm" variant={row.status === "active" ? "outline" : "default"} onClick={() => toggleStatus(row)}>
+            {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
+          </Button>
+        </div>
+      </div>
+      {childrenOf(row.id).map((child) => <CategoryRow key={child.id} row={child} depth={depth + 1} />)}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
         icon={Layers3}
-        title={t("categories_title", { defaultMessage: "Categories" })}
-        description={t("categories_only_desc", { defaultMessage: "Complaint and work-order categories. Services are managed separately." })}
+        title={t("master_categories_title", { defaultMessage: "Master categories" })}
+        description={t("master_categories_desc", { defaultMessage: "Platform-wide categories. Companies select from this list; only Super Admin can create or edit them." })}
         actions={
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/settings/categories/create")}>
             <Plus className="mr-2 h-4 w-4" /> {t("new_category", { defaultMessage: "New category" })}
@@ -101,68 +153,6 @@ export default function CategoriesPage() {
       ) : (
         <div className="space-y-3">
           {roots.map((row) => <CategoryRow key={row.id} row={row} />)}
-          {/* Legacy summary cards intentionally replaced by the hierarchical rows above. */}
-          {false && roots.map((row) => (
-            <div key={row.id} className="glass-panel rounded-2xl p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{row.name_en}</h3>
-                    <StatusBadge value={row.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {row.name_ar} · {row.code}
-                    {row.description ? ` · ${row.description}` : ""}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-violet-100 px-2.5 py-1 font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-200">
-                      {row.services_count ?? 0} {t("services", { defaultMessage: "services" })}
-                    </span>
-                    {row.capacity != null && (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                        {t("capacity", { defaultMessage: "Capacity" })}: {row.capacity}
-                      </span>
-                    )}
-                    {row.reopen_window_hours != null && (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                        {t("reopen_window", { defaultMessage: "Reopen window" })}: {row.reopen_window_hours}h
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => router.push(`/settings/categories/${row.id}/edit`)}>
-                    <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
-                  </Button>
-                  {row.status === "active" ? (
-                    <Button size="sm" variant="outline" onClick={async () => {
-                      try {
-                        await complaintsApi.deactivateCategory(row.id);
-                        toast.success(t("category_deactivated", { defaultMessage: "Category deactivated" }));
-                        load();
-                      } catch (error) {
-                        toast.error(apiError(error, "Unable to deactivate"));
-                      }
-                    }}>
-                      {t("deactivate", { defaultMessage: "Deactivate" })}
-                    </Button>
-                  ) : (
-                    <Button size="sm" onClick={async () => {
-                      try {
-                        await complaintsApi.restoreCategory(row.id);
-                        toast.success(t("category_activated", { defaultMessage: "Category activated" }));
-                        load();
-                      } catch (error) {
-                        toast.error(apiError(error, "Unable to activate"));
-                      }
-                    }}>
-                      {t("activate", { defaultMessage: "Activate" })}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>

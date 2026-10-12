@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, memo } from "react";
-import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from "@react-google-maps/api";
+import { GoogleMap, Marker, Autocomplete } from "@react-google-maps/api";
+import { useGoogleMaps } from "@/lib/google-maps";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
-const LIBRARIES = ["places"];
 const DOHA = { lat: 25.2854, lng: 51.5310 };
 
 const DARK_MAP_STYLES = [
@@ -26,11 +26,7 @@ function LocationPickerMap({
   defaultCenter = DOHA,
   searchPlaceholder = "Search for a location...",
 }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: LIBRARIES,
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   const [map, setMap] = useState(null);
   const [markerPosition, setMarkerPosition] = useState(null);
