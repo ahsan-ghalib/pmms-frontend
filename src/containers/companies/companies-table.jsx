@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Building2, CreditCard, Edit, Eye, KeyRound, MoreHorizontal, Plus, Timer, Users } from "lucide-react";
+import { Archive, Building2, CreditCard, Download, Edit, Eye, KeyRound, MoreHorizontal, Plus, Timer, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/common/data-table";
@@ -17,6 +17,8 @@ import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function CompaniesTable() {
   const t = useT("common");
@@ -27,12 +29,44 @@ export default function CompaniesTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [deletion, setDeletion] = useState({ company: null, eligibility: null, downloaded: false, confirming: false, name: "", loading: false });
 
   const companyAdmin = (company) => company.admins?.[0];
   const archiveCompany = async (company) => {
     if (!window.confirm(`Archive ${company.name}?`)) return;
     try { await companiesApi.archive(company.id); toast.success("Company archived"); await load(); }
     catch (error) { toast.error(apiError(error, "Unable to archive company")); }
+  };
+
+  const openDeletion = async (company) => {
+    try {
+      const eligibility = await companiesApi.deletionEligibility(company.id);
+      setDeletion({ company, eligibility, downloaded: false, confirming: false, name: "", loading: false });
+    } catch (error) { toast.error(apiError(error, "Unable to check deletion eligibility")); }
+  };
+
+  const downloadExport = async () => {
+    setDeletion((current) => ({ ...current, loading: true }));
+    try {
+      const blob = await companiesApi.deletionExport(deletion.company.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${deletion.company.code || "company"}-complete-export.zip`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setDeletion((current) => ({ ...current, downloaded: true, loading: false }));
+    } catch (error) { setDeletion((current) => ({ ...current, loading: false })); toast.error(apiError(error, "Unable to download company data")); }
+  };
+
+  const permanentlyDelete = async () => {
+    setDeletion((current) => ({ ...current, loading: true }));
+    try {
+      await companiesApi.permanentlyDelete(deletion.company.id, deletion.name);
+      toast.success("Company permanently deleted");
+      setDeletion({ company: null, eligibility: null, downloaded: false, confirming: false, name: "", loading: false });
+      await load();
+    } catch (error) { setDeletion((current) => ({ ...current, loading: false })); toast.error(apiError(error, "Unable to delete company")); }
   };
 
   const load = async () => {
@@ -164,6 +198,7 @@ export default function CompaniesTable() {
                 <DropdownMenuItem onClick={() => companyAdmin(row.original) ? router.push(`/users/edit/${companyAdmin(row.original).id}`) : toast.error("No Company Admin found")}><KeyRound className="mr-2 h-4 w-4" /> Edit Admin</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600" onClick={() => archiveCompany(row.original)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-700" onClick={() => openDeletion(row.original)}><Trash2 className="mr-2 h-4 w-4" /> Delete Company</DropdownMenuItem>
               </>}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -214,6 +249,23 @@ export default function CompaniesTable() {
 
       <TableToolbar config={{ search: { placeholder: t("search_companies", { defaultMessage: "Search companies..." }), value: search, onChange: setSearch } }} />
       <DataTable columns={columns} data={filtered} isLoading={loading} columnsBtn={false} />
+
+      <Dialog open={Boolean(deletion.company)} onOpenChange={(open) => !open && !deletion.loading && setDeletion({ company: null, eligibility: null, downloaded: false, confirming: false, name: "", loading: false })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-700">Delete {deletion.company?.name}</DialogTitle>
+            <DialogDescription>This permanently removes the company and its data. Only eligible expired companies and trials can be deleted.</DialogDescription>
+          </DialogHeader>
+          {deletion.eligibility?.eligible ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Download the complete company export before deletion. This includes properties, users, tenants, complaints, work orders, assets, inventory, purchase requests, photos, documents, and history.</div>
+              <Button variant="outline" className="w-full" onClick={downloadExport} disabled={deletion.loading}><Download className="mr-2 h-4 w-4" /> {deletion.downloaded ? "Download again" : "Download complete data"}</Button>
+              {deletion.downloaded && <div className="space-y-2"><label className="text-sm font-medium">Type <span className="font-semibold">{deletion.company?.name}</span> to confirm</label><Input value={deletion.name} onChange={(event) => setDeletion((current) => ({ ...current, name: event.target.value }))} placeholder={deletion.company?.name} /><p className="text-xs text-slate-500">Permanent deletion cannot be undone. Returning customers must be created as a new company.</p></div>}
+            </div>
+          ) : <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">Deletion is blocked: {(deletion.eligibility?.blockers || []).join(", ") || "company is not eligible"}.</div>}
+          <DialogFooter><Button variant="outline" onClick={() => setDeletion({ company: null, eligibility: null, downloaded: false, confirming: false, name: "", loading: false })}>Cancel</Button>{deletion.eligibility?.eligible && <Button variant="destructive" disabled={!deletion.downloaded || deletion.name !== deletion.company?.name || deletion.loading} onClick={permanentlyDelete}><Trash2 className="mr-2 h-4 w-4" /> Permanently delete</Button>}</DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

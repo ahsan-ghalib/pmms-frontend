@@ -52,5 +52,8 @@ export const companiesApi = {
   },
   archive: async (id) => (await axiosInstance.delete(`/companies/${id}`)).data,
   restore: async (id) => (await axiosInstance.post(`/companies/${id}/restore`)).data,
+  deletionEligibility: async (id) => (await axiosInstance.get(`/companies/${id}/deletion-eligibility`)).data?.data,
+  deletionExport: async (id) => (await axiosInstance.get(`/companies/${id}/deletion-export`, { responseType: "blob" })).data,
+  permanentlyDelete: async (id, company_name) => (await axiosInstance.post(`/companies/${id}/permanent-delete`, { company_name })).data,
   logoUrl: (id, version) => `${process.env.NEXT_PUBLIC_API_URL}/companies/${id}/logo${version ? `?v=${version}` : ""}`,
 };
