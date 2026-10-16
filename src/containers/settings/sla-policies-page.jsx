@@ -12,6 +12,7 @@ import { slaApi } from "@/services/sla/sla-api";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY = {
   category_id: "",
@@ -31,6 +32,9 @@ const EMPTY = {
 
 export default function SlaPoliciesPage() {
   const t = useT("common");
+  const can = useCan();
+  const canAdd = can("Add SLA");
+  const canEdit = can(["Edit SLA", "Configure SLA"]);
   const [rows, setRows] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(EMPTY);
@@ -165,12 +169,12 @@ export default function SlaPoliciesPage() {
           <input type="checkbox" checked={form.escalate_breached} onChange={(event) => setForm((current) => ({ ...current, escalate_breached: event.target.checked }))} />
           {t("alert_breached", { defaultMessage: "Alert admins on breach" })}
         </label>
-        <div className="md:col-span-4 flex justify-end">
+        {(editing ? canEdit : canAdd) && <div className="md:col-span-4 flex justify-end">
           <Button className="bg-violet-600 hover:bg-violet-700" onClick={save}>
             <Plus className="mr-2 h-4 w-4" />
             {editing ? t("save", { defaultMessage: "Save" }) : t("add_policy", { defaultMessage: "Add policy" })}
           </Button>
-        </div>
+        </div>}
       </section>
 
       <div className="space-y-3">

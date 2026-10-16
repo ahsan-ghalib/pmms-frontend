@@ -13,10 +13,12 @@ import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function PmmsComplaintsTable() {
   const t = useT("common");
   const router = useRouter();
+  const canCreate = useCan()("Add Complaints");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -79,11 +81,11 @@ export default function PmmsComplaintsTable() {
         icon={MessageSquareWarning}
         title={t("complaints", { defaultMessage: "Complaints" })}
         description={t("complaints_desc", { defaultMessage: "Tenant requests and their work-order lifecycle." })}
-        actions={
+        actions={canCreate && (
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/complaints/create")}>
             <Plus className="h-4 w-4 mr-2" /> {t("new_complaint", { defaultMessage: "New complaint" })}
           </Button>
-        }
+        )}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard title={t("submitted", { defaultMessage: "Submitted" })} value={stats.submitted} theme="cyan" />

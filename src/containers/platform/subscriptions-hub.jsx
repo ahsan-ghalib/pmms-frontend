@@ -9,6 +9,7 @@ import {
   Layers3,
   Pencil,
   Plus,
+  RefreshCw,
   Timer,
   Trash2,
 } from "lucide-react";
@@ -19,11 +20,10 @@ import EmptyState from "@/components/pmms/empty-state";
 import StatCard from "@/components/common/stat-card";
 import { FeaturePills } from "@/containers/platform/plan-feature-picker";
 import { platformApi } from "@/services/platform/platform-api";
-import { apiError, formatDate } from "@/lib/pmms";
+import { apiError, formatDate, formatMoney, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 function limitLabel(value) {
   return value == null || value === "" ? "∞" : value;
@@ -37,12 +37,12 @@ function currentTab() {
 export default function SubscriptionsHub() {
   const t = useT("common");
   const router = useRouter();
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = role === Roles.SUPER_ADMIN;
+  const canManage = useCan()("Edit Subscriptions");
   const [tab, setTab] = useState("subscriptions");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [renewingId, setRenewingId] = useState(null);
 
   const load = async () => {
     try {
@@ -203,6 +203,27 @@ export default function SubscriptionsHub() {
                     </div>
                     {canManage && (
                       <div className="flex gap-2">
+                        {row.status !== "cancelled" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={renewingId === row.id}
+                            onClick={async () => {
+                              setRenewingId(row.id);
+                              try {
+                                await platformApi.renewSubscription(row.id);
+                                toast.success(t("subscription_renewed", { defaultMessage: "Subscription renewed. A draft invoice is ready for review." }));
+                                load();
+                              } catch (error) {
+                                toast.error(apiError(error, t("subscription_renew_failed", { defaultMessage: "Unable to renew subscription" })));
+                              } finally {
+                                setRenewingId(null);
+                              }
+                            }}
+                          >
+                            <RefreshCw className="mr-1 h-3.5 w-3.5" /> {t("renew", { defaultMessage: "Renew" })}
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline" onClick={() => router.push(`/subscriptions/${row.id}/edit`)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
                         </Button>
@@ -226,7 +247,16 @@ export default function SubscriptionsHub() {
                     )}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5">
+                    <div className="rounded-xl bg-violet-50 px-3 py-2 dark:bg-violet-500/10">
+                      <p className="text-[11px] uppercase tracking-wider text-slate-400">
+                        {t(`cycle_${row.billing_cycle || "monthly"}`, { defaultMessage: labelize(row.billing_cycle || "monthly") })}
+                        {row.custom_price != null && ` · ${t("special_price_short", { defaultMessage: "special" })}`}
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                        {row.pricing?.is_paid ? formatMoney(row.pricing.total, row.currency) : t("free", { defaultMessage: "Free" })}
+                      </p>
+                    </div>
                     <div className="rounded-xl bg-slate-100/80 px-3 py-2 dark:bg-white/5">
                       <p className="text-[11px] uppercase tracking-wider text-slate-400">{t("users", { defaultMessage: "Users" })}</p>
                       <p className="text-lg font-semibold text-slate-900 dark:text-white">{limitLabel(row.plan?.max_users)}</p>
@@ -275,6 +305,20 @@ export default function SubscriptionsHub() {
                 <StatusBadge value={plan.is_active ? "active" : "inactive"} />
               </div>
               <p className="mt-2 min-h-10 text-sm text-slate-500 dark:text-slate-400">{plan.description || t("no_description", { defaultMessage: "No description" })}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {(plan.prices || []).length === 0 ? (
+                  <span className="text-xs text-slate-400">{t("no_prices_set", { defaultMessage: "No prices set" })}</span>
+                ) : (
+                  plan.prices.map((price) => (
+                    <span
+                      key={`${price.currency}-${price.billing_cycle}`}
+                      className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-200"
+                    >
+                      {formatMoney(price.amount, price.currency)} / {t(`cycle_${price.billing_cycle}_short`, { defaultMessage: price.billing_cycle === "annual" ? "yr" : "mo" })}
+                    </span>
+                  ))
+                )}
+              </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-xl bg-slate-100/80 p-3 dark:bg-white/5">
                   <p className="text-lg font-semibold text-slate-900 dark:text-white">{limitLabel(plan.max_users)}</p>

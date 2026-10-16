@@ -16,6 +16,7 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY = { from: "", to: "", property_id: "", category_id: "", priority: "", status: "" };
 
@@ -27,6 +28,7 @@ function formatClock(seconds) {
 
 export default function SlaReportPage() {
   const t = useT("common");
+  const canExport = useCan()("Export Reports");
   const router = useRouter();
   const [filters, setFilters] = useState(EMPTY);
   const [report, setReport] = useState({ totals: {}, rows: [] });
@@ -73,12 +75,12 @@ export default function SlaReportPage() {
         icon={Timer}
         title={t("sla_report", { defaultMessage: "SLA report" })}
         description={t("sla_report_desc", { defaultMessage: "Performance by property, category, priority, and status. Values match work-order timers." })}
-        actions={
+        actions={canExport && (
           <>
             <Button variant="outline" onClick={() => reportsApi.export("sla", "xlsx", Object.fromEntries(Object.entries(filters).filter(([, value]) => value)))}>{t("export_excel", { defaultMessage: "Excel" })}</Button>
             <Button variant="outline" onClick={() => reportsApi.export("sla", "pdf", Object.fromEntries(Object.entries(filters).filter(([, value]) => value)))}>{t("export_pdf", { defaultMessage: "PDF" })}</Button>
           </>
-        }
+        )}
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

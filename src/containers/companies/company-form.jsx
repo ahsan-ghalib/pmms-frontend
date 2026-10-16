@@ -49,6 +49,7 @@ export default function CompanyForm({ company }) {
       email: company?.email || "",
       phone: company?.phone || "",
       address: company?.address || "",
+      tax_number: company?.tax_number || "",
       country_id: company?.country_id ? String(company.country_id) : "",
       timezone: company?.timezone || "Asia/Qatar",
       status: company?.status || "active",
@@ -86,6 +87,7 @@ export default function CompanyForm({ company }) {
       email: values.email || null,
       phone: values.phone || null,
       address: values.address || null,
+      tax_number: values.tax_number || null,
       country_id: values.country_id ? Number(values.country_id) : null,
       timezone: values.timezone,
       status: values.status,
@@ -171,6 +173,7 @@ export default function CompanyForm({ company }) {
             errors={errors}
             options={languages.map((language) => ({ value: language.id, label: language.name }))}
           />
+          <TextField label={t("tax_number", { defaultMessage: "Tax / VAT number" })} name="tax_number" control={control} errors={errors} />
           <div className="md:col-span-2">
             <TextField label={t("address", { defaultMessage: "Address" })} name="address" control={control} errors={errors} />
           </div>

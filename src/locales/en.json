@@ -1296,7 +1296,10 @@
         "12_months": "12 months",
         "CUSTOM_DATE": "CUSTOM DATE",
         "BRANCH": "BRANCH",
-        "All_Branches": "All Branches"
+        "All_Branches": "All Branches",
+        "role_default": "Default",
+        "role_custom": "Custom",
+        "role_default_readonly": "Default roles are managed by the platform and shared by every company. Create a custom role to give your team a different set of permissions."
     },
     "auth": {
         "failed": "These credentials do not match our records.",

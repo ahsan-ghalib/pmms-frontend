@@ -19,9 +19,10 @@ import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
-import { Roles, isAdmin } from "@/lib/permissions/role-access";
+import { Roles } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
 import { UserStatusChangeDialog, UserStatusHistoryDialog } from "./user-status-dialogs";
+import { useCan } from "@/hooks/use-module-access";
 
 function userRole(row) {
   return String(row?.role || "").toLowerCase();
@@ -46,7 +47,10 @@ export default function PmmsUsersTable() {
   const [statusOptions, setStatusOptions] = useState(null);
   const [logoutUser, setLogoutUser] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
-  const isSuperAdmin = String(session?.user?.role || "").toLowerCase() === Roles.SUPER_ADMIN;
+  const can = useCan();
+  const canCreate = can("Add Users");
+  const canEdit = can("Edit Users");
+  const canAssign = can("Assign Users");
 
   const load = async () => {
     setLoading(true);
@@ -166,11 +170,11 @@ export default function PmmsUsersTable() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}/edit`)}><Pencil className="mr-2 h-4 w-4" />{t("edit", { defaultMessage: "Edit" })}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { const existing = row.original.properties || []; setAssignUser(row.original); setSelectedProperties(existing.map((item) => item.property_id).filter(Boolean)); setAssignmentShifts(Object.fromEntries(existing.filter((item) => item.property_id).map((item) => [item.property_id, { start: String(item.shift_starts_at || "").slice(0, 5), end: String(item.shift_ends_at || "").slice(0, 5) }]))); }}>{t("assign", { defaultMessage: "Assign" })}</DropdownMenuItem>
+            {canEdit && <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}/edit`)}><Pencil className="mr-2 h-4 w-4" />{t("edit", { defaultMessage: "Edit" })}</DropdownMenuItem>}
+            {canAssign && <DropdownMenuItem onClick={() => { const existing = row.original.properties || []; setAssignUser(row.original); setSelectedProperties(existing.map((item) => item.property_id).filter(Boolean)); setAssignmentShifts(Object.fromEntries(existing.filter((item) => item.property_id).map((item) => [item.property_id, { start: String(item.shift_starts_at || "").slice(0, 5), end: String(item.shift_ends_at || "").slice(0, 5) }]))); }}>{t("assign", { defaultMessage: "Assign" })}</DropdownMenuItem>}
             <DropdownMenuItem onClick={() => openHistory(row.original)}><History className="mr-2 h-4 w-4" />{t("history", { defaultMessage: "History" })}</DropdownMenuItem>
-            {isSuperAdmin && row.original.id !== session?.user?.id && <DropdownMenuItem className="text-amber-700 focus:text-amber-700" onClick={() => setLogoutUser(row.original)}><LogOut className="mr-2 h-4 w-4" />{t("logout_sessions", { defaultMessage: "Logout sessions" })}</DropdownMenuItem>}
-            <DropdownMenuItem className={row.original.status === "active" ? "text-rose-600 focus:text-rose-600" : "text-violet-700 focus:text-violet-700"} onClick={() => setStatusUser(row.original)}><UserX className="mr-2 h-4 w-4" />{row.original.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}</DropdownMenuItem>
+            {canEdit && row.original.id !== session?.user?.id && <DropdownMenuItem className="text-amber-700 focus:text-amber-700" onClick={() => setLogoutUser(row.original)}><LogOut className="mr-2 h-4 w-4" />{t("logout_sessions", { defaultMessage: "Logout sessions" })}</DropdownMenuItem>}
+            {canEdit && <DropdownMenuItem className={row.original.status === "active" ? "text-rose-600 focus:text-rose-600" : "text-violet-700 focus:text-violet-700"} onClick={() => setStatusUser(row.original)}><UserX className="mr-2 h-4 w-4" />{row.original.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}</DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -184,7 +188,7 @@ export default function PmmsUsersTable() {
         icon={Users}
         title={t("users", { defaultMessage: "Users" })}
         description={t("users_desc", { defaultMessage: "Staff users, roles, and property assignments. Tenants are managed separately." })}
-        actions={isAdmin(session?.user?.role) && (
+        actions={canCreate && (
           <div className="flex gap-2">
             <Button variant="outline" className="rounded-full" onClick={() => router.push("/tenants")}>
               {t("tenants", { defaultMessage: "Tenants" })}

@@ -10,6 +10,7 @@ import {
   Radio,
   Save,
   ShieldCheck,
+  ReceiptText,
   SlidersHorizontal,
   Timer,
 } from "lucide-react";
@@ -36,6 +37,7 @@ const GROUP_ICONS = {
   timer: Timer,
   radio: Radio,
   shield: ShieldCheck,
+  receipt: ReceiptText,
 };
 
 function flattenValues(groups) {

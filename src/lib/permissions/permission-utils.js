@@ -1,4 +1,5 @@
 import { decryptPermissions } from './decryption.util';
+import { clearModuleAccess } from './module-access';
 import { rolesPermissionsApi } from '@/services/roles-permissions/roles-permissions-api';
 import { store } from '@/lib/store/store';
 import { setPermissions, setLoading, setError, clearPermissions, selectPermissions, selectIsCacheValid } from '@/lib/store/slices/permissionsSlice';
@@ -148,6 +149,7 @@ export function getUserPermissionsSync() {
 
 export function clearUserPermissions() {
   store.dispatch(clearPermissions());
+  clearModuleAccess();
   if (typeof window !== 'undefined') {
     localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
   }

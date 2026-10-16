@@ -25,10 +25,9 @@ import { usersApi } from "@/services/users/users-api";
 import { formatDistanceToNow, format } from "date-fns";
 import { DeleteDialogBox } from "@/components/common/delete-dialog-box";
 import { hasPermissionSync, Permissions } from "@/lib/permissions";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { KeyRound, LogOut } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function UserDetails({ userId }) {
   const router = useRouter();
@@ -38,8 +37,7 @@ export default function UserDetails({ userId }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { data: session } = useSession();
-  const isSuperAdmin = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
+  const canManageSessions = useCan()("Edit Users");
 
   useEffect(() => {
     if (userId) {
@@ -321,7 +319,7 @@ export default function UserDetails({ userId }) {
         </Card>
       </div>
 
-      {isSuperAdmin && (
+      {canManageSessions && (
         <Card className="border-amber-200 dark:border-amber-500/30">
           <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-amber-600" /> Security</CardTitle></CardHeader>
           <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

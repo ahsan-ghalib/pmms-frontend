@@ -14,9 +14,11 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { pmmsUsersApi } from "@/services/users/pmms-users-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function OpsReportPage({ type }) {
   const t = useT("common");
+  const canExport = useCan()("Export Reports");
   const [filters, setFilters] = useState({});
   const [report, setReport] = useState({ columns: [], rows: [], totals: {}, definition: "" });
   const [properties, setProperties] = useState([]);
@@ -64,12 +66,12 @@ export default function OpsReportPage({ type }) {
         icon={FileBarChart}
         title={report.label || type.replaceAll("_", " ")}
         description={report.definition || t("report_desc", { defaultMessage: "Filter combinations stay scoped to your role." })}
-        actions={
+        actions={canExport && (
           <>
             <Button variant="outline" onClick={() => download("xlsx")}>{t("export_excel", { defaultMessage: "Excel" })}</Button>
             <Button variant="outline" onClick={() => download("pdf")}>{t("export_pdf", { defaultMessage: "PDF" })}</Button>
           </>
-        }
+        )}
       />
       {report.generated_at && <p className="text-xs text-slate-500">{t("generated_at", { defaultMessage: "Generated" })} {report.generated_at}</p>}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

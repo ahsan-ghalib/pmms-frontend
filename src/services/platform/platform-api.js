@@ -26,6 +26,7 @@ export const platformApi = {
   createSubscription: async (payload) => unwrapData((await axiosInstance.post("/subscriptions", payload)).data),
   updateSubscription: async (id, payload) => unwrapData((await axiosInstance.put(`/subscriptions/${id}`, payload)).data),
   deleteSubscription: async (id) => (await axiosInstance.delete(`/subscriptions/${id}`)).data,
+  renewSubscription: async (id) => unwrapData((await axiosInstance.post(`/subscriptions/${id}/renew`)).data),
 
   trials: async (params = {}) => unwrapData((await axiosInstance.get("/trials", { params })).data),
   createTrial: async (payload) => (await axiosInstance.post("/trials", payload)).data,

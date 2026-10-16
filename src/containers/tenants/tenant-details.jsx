@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { tenantsApi } from "@/services/tenants/tenants-api";
 import { apiError, formatDate, formatDay, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const FALLBACK_REASONS = [
   { value: "rent_not_received", label: "Payment / rent not received" },
@@ -29,6 +30,7 @@ export default function TenantDetails() {
   const [tenant, setTenant] = useState(null);
   const [reasons, setReasons] = useState(FALLBACK_REASONS);
   const [dialog, setDialog] = useState(null);
+  const canEdit = useCan()("Edit Tenants");
 
   const load = async () => {
     try {
@@ -56,7 +58,7 @@ export default function TenantDetails() {
         icon={UserRound}
         title={tenant.name}
         description={`${tenant.email} · ${tenant.phone || "—"}`}
-        actions={(
+        actions={canEdit && (
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => router.push(`/tenants/${tenant.id}/edit`)}>
               <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}

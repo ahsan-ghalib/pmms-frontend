@@ -11,8 +11,7 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 import { cn } from "@/lib/utils";
 import PropertyNodeDialog from "./property-node-dialog";
 
@@ -33,9 +32,15 @@ export default function PropertyDetails() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT("common");
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.PROPERTY_MANAGER].includes(role);
-  const canArchive = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN].includes(role);
+  const can = useCan();
+  const canEdit = can("Edit Properties");
+  const canArchive = can("Delete Properties");
+  const canAddLocation = can("Add Locations");
+  const canEditLocation = can("Edit Locations");
+  const canArchiveLocation = can("Delete Locations");
+  const canAddUnit = can("Add Units");
+  const canEditUnit = can("Edit Units");
+  const canArchiveUnit = can("Delete Units");
   const [tree, setTree] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
   const [dialog, setDialog] = useState(null);
@@ -116,12 +121,12 @@ export default function PropertyDetails() {
         actions={
           <>
             <Button variant="outline" onClick={() => router.push("/properties")}>{t("back", { defaultMessage: "Back" })}</Button>
-            {canManage && !archived && (
+            {canEdit && !archived && (
               <Button variant="outline" onClick={() => router.push(`/properties/${tree.id}/edit`)}>
                 <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}
               </Button>
             )}
-            {canManage && !archived && (
+            {canAddLocation && !archived && (
                 <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => setDialog({ mode: "location" })}>
                 <Plus className="mr-2 h-4 w-4" /> {t("add_level", { defaultMessage: "Add {label}", label: levelLabel(1, "Location").toLowerCase() })}
               </Button>
@@ -231,15 +236,15 @@ export default function PropertyDetails() {
                   </a>
                 )}
               </div></div>
-              {canManage && (
+              {(canEditLocation || canArchiveLocation) && (
                 <div className="flex flex-wrap gap-2 p-5">
                   {!location.archived_at && (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "location", node: location })}>{t("edit", { defaultMessage: "Edit" })}</Button>
-                      <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveLocation(location.id), t("location_archived", { defaultMessage: "Location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>
+                      {canEditLocation && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "location", node: location })}>{t("edit", { defaultMessage: "Edit" })}</Button>}
+                      {canArchiveLocation && <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveLocation(location.id), t("location_archived", { defaultMessage: "Location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>}
                     </>
                   )}
-                  {location.archived_at && (
+                  {location.archived_at && canArchiveLocation && (
                     <Button size="sm" variant="outline" onClick={() => run(() => propertiesApi.restoreLocation(location.id), t("location_restored", { defaultMessage: "Location restored" }))}>{t("restore", { defaultMessage: "Restore" })}</Button>
                   )}
                 </div>
@@ -252,7 +257,7 @@ export default function PropertyDetails() {
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">{levelLabel(2, t("sub_locations", { defaultMessage: "Sub-locations" }))}</p>
                   <p className="text-xs text-slate-500">{t("sub_locations_desc", { defaultMessage: "Add sub-locations inside this location." })}</p>
                 </div></div>
-                {!location.archived_at && canManage && levelEnabled(2) && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}><Plus className="mr-1.5 h-4 w-4" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(2, "sub-location").toLowerCase() })}</Button>}
+                {!location.archived_at && canAddLocation && levelEnabled(2) && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id })}><Plus className="mr-1.5 h-4 w-4" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(2, "sub-location").toLowerCase() })}</Button>}
               </div>
               <div className="space-y-3">
               {(location.sub_locations || []).map((sub) => (
@@ -263,16 +268,16 @@ export default function PropertyDetails() {
                       <p className="font-mono text-xs text-slate-500">{sub.code}</p>
                       <StatusBadge value={sub.archived_at ? "archived" : sub.status} />
                     </div></div>
-                    {canManage && !sub.archived_at && (
+                    {(canEditLocation || canAddUnit || canArchiveLocation) && !sub.archived_at && (
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id, node: sub })}>{t("edit", { defaultMessage: "Edit" })}</Button>
-                        <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}><Plus className="mr-1 h-3.5 w-3.5" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(3, "unit").toLowerCase() })}</Button>
+                        {canEditLocation && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "sub", parentId: location.id, node: sub })}>{t("edit", { defaultMessage: "Edit" })}</Button>}
+                        {canAddUnit && <Button size="sm" variant="outline" onClick={() => setDialog({ mode: "unit", parentId: sub.id })}><Plus className="mr-1 h-3.5 w-3.5" />{t("add_level", { defaultMessage: "Add {label}", label: levelLabel(3, "unit").toLowerCase() })}</Button>}
                         </div>
-                        <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveSubLocation(sub.id), t("sub_location_archived", { defaultMessage: "Sub-location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>
+                        {canArchiveLocation && <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => run(() => propertiesApi.archiveSubLocation(sub.id), t("sub_location_archived", { defaultMessage: "Sub-location archived" }))}>{t("archive", { defaultMessage: "Archive" })}</Button>}
                       </div>
                     )}
-                    {canManage && sub.archived_at && (
+                    {canArchiveLocation && sub.archived_at && (
                       <Button size="sm" variant="ghost" onClick={() => run(() => propertiesApi.restoreSubLocation(sub.id), t("sub_location_restored", { defaultMessage: "Sub-location restored" }))}>{t("restore", { defaultMessage: "Restore" })}</Button>
                     )}
                   </div>
@@ -290,10 +295,10 @@ export default function PropertyDetails() {
                         </div>
                         <div className="mt-4 flex items-center justify-between border-t border-teal-100 pt-3 text-xs dark:border-teal-500/20">
                           <div><p className="text-[10px] uppercase tracking-wider text-slate-400">{t("unit_type", { defaultMessage: "Unit type" })}</p><p className="mt-1 font-medium text-slate-700 dark:text-slate-200">{labelize(unit.unit_type) || "—"}</p></div>
-                        {canManage && !unit.archived_at && (
-                          <div className="flex gap-2"><button type="button" className="font-semibold text-violet-700 hover:underline" onClick={() => setDialog({ mode: "unit", parentId: sub.id, node: unit })}>{t("edit", { defaultMessage: "Edit" })}</button><button type="button" className="font-semibold text-rose-600 hover:underline" onClick={() => run(() => propertiesApi.archiveUnit(unit.id), t("unit_archived", { defaultMessage: "Unit archived" }))}>{t("archive", { defaultMessage: "Archive" })}</button></div>
+                        {(canEditUnit || canArchiveUnit) && !unit.archived_at && (
+                          <div className="flex gap-2">{canEditUnit && <button type="button" className="font-semibold text-violet-700 hover:underline" onClick={() => setDialog({ mode: "unit", parentId: sub.id, node: unit })}>{t("edit", { defaultMessage: "Edit" })}</button>}{canArchiveUnit && <button type="button" className="font-semibold text-rose-600 hover:underline" onClick={() => run(() => propertiesApi.archiveUnit(unit.id), t("unit_archived", { defaultMessage: "Unit archived" }))}>{t("archive", { defaultMessage: "Archive" })}</button>}</div>
                         )}
-                        {canManage && unit.archived_at && (
+                        {canArchiveUnit && unit.archived_at && (
                           <button type="button" className="font-semibold text-violet-700 hover:underline" onClick={() => run(() => propertiesApi.restoreUnit(unit.id), t("unit_restored", { defaultMessage: "Unit restored" }))}>{t("restore", { defaultMessage: "Restore" })}</button>
                         )}
                         </div>

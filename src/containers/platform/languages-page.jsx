@@ -13,13 +13,11 @@ import EmptyState from "@/components/pmms/empty-state";
 import { platformApi } from "@/services/platform/platform-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function LanguagesPage() {
   const t = useT("common");
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = role === Roles.SUPER_ADMIN;
+  const canManage = useCan()("Edit Languages");
   const [rows, setRows] = useState([]);
   const [editing, setEditing] = useState(null);
   const { control, handleSubmit, reset } = useForm();

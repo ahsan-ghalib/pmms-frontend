@@ -38,9 +38,8 @@ import { assetsApi } from "@/services/assets/assets-api";
 import { apiError, formatDay, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { useLocaleContext } from "@/providers/locale-provider";
-import { useSession } from "next-auth/react";
-import { isAdmin, isManager } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 const FREQUENCIES = [
   { value: "monthly", key: "freq_monthly" },
@@ -83,9 +82,9 @@ export default function MaintenanceSchedules() {
   const t = useT("common");
   const router = useRouter();
   const { locale } = useLocaleContext();
-  const role = useSession().data?.user?.role;
-  const canManage = isManager(role);
-  const canGenerate = isAdmin(role);
+  const can = useCan();
+  const canManage = can("Add Work Orders");
+  const canGenerate = canManage && can("Configure Company Settings");
 
   const [rows, setRows] = useState([]);
   const [properties, setProperties] = useState([]);

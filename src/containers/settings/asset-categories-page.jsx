@@ -16,10 +16,14 @@ import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
 import { SearchableEnumDropdown } from "@/components/form-fields";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function AssetCategoriesPage() {
   const t = useT("common");
   const isSuper = normalizeRole(useSession().data?.user?.role) === Roles.SUPER_ADMIN;
+  const can = useCan();
+  const canAdd = can("Add Assets");
+  const canEdit = can("Edit Assets");
   const [rows, setRows] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -172,7 +176,7 @@ export default function AssetCategoriesPage() {
         ))}
       </div>
 
-      <div className="flex justify-end"><Button onClick={() => setSubModalOpen(true)}><Plus className="mr-2 h-4 w-4" /> {t("add_subcategory", { defaultMessage: "Add subcategory" })}</Button></div>
+      {canAdd && <div className="flex justify-end"><Button onClick={() => setSubModalOpen(true)}><Plus className="mr-2 h-4 w-4" /> {t("add_subcategory", { defaultMessage: "Add subcategory" })}</Button></div>}
 
       <div className="space-y-3">
         {filtered.map((row) => (
@@ -184,6 +188,7 @@ export default function AssetCategoriesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge value={row.status} />
+                {canEdit && <>
                 <Button
                   variant="outline"
                   size="sm"
@@ -194,6 +199,7 @@ export default function AssetCategoriesPage() {
                 <Button variant="outline" size="sm" onClick={() => toggleStatus(row)}>
                   {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
                 </Button>
+                </>}
               </div>
             </div>
             <div className="mt-3 space-y-2">
@@ -205,6 +211,7 @@ export default function AssetCategoriesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge value={sub.status} />
+                    {canEdit && <>
                     <Button
                       variant="outline"
                       size="sm"
@@ -220,6 +227,7 @@ export default function AssetCategoriesPage() {
                     <Button variant="outline" size="sm" onClick={() => toggleSub(sub)}>
                       {sub.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
                     </Button>
+                    </>}
                   </div>
                 </div>
               ))}

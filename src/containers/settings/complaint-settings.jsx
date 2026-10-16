@@ -32,6 +32,7 @@ import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 const DEFAULTS = {
   duplicate_complaint_rule: "warn",
@@ -160,6 +161,7 @@ export default function ComplaintSettingsForm() {
   const t = useT("common");
   const role = normalizeRole(useSession().data?.user?.role);
   const isSuper = role === Roles.SUPER_ADMIN;
+  const canSave = useCan()(["Edit Company Settings", "Configure Company Settings"]);
   const [companies, setCompanies] = useState([]);
   const [companyId, setCompanyId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -243,14 +245,16 @@ export default function ComplaintSettingsForm() {
                 {t("unsaved_changes", { defaultMessage: "Unsaved changes" })}
               </span>
             )}
-            <Button
-              className="rounded-full bg-violet-600 hover:bg-violet-700"
-              onClick={onSave}
-              disabled={saving || loading || !formState.isDirty}
-            >
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              {t("save_changes", { defaultMessage: "Save changes" })}
-            </Button>
+            {canSave && (
+              <Button
+                className="rounded-full bg-violet-600 hover:bg-violet-700"
+                onClick={onSave}
+                disabled={saving || loading || !formState.isDirty}
+              >
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {t("save_changes", { defaultMessage: "Save changes" })}
+              </Button>
+            )}
           </div>
         }
       />

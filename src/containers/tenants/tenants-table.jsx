@@ -13,14 +13,13 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { tenantsApi } from "@/services/tenants/tenants-api";
 import { apiError, formatDay } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { isAdmin } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function TenantsTable() {
   const t = useT("common");
   const router = useRouter();
-  const { data: session } = useSession();
+  const canCreate = useCan()("Add Tenants");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -95,7 +94,7 @@ export default function TenantsTable() {
         icon={Users}
         title={t("tenants", { defaultMessage: "Tenants" })}
         description={t("tenants_desc", { defaultMessage: "Register tenants, assign rented units, and manage contracts separately from staff users." })}
-        actions={isAdmin(session?.user?.role) && (
+        actions={canCreate && (
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/tenants/create")}>
             <Plus className="mr-2 h-4 w-4" /> {t("new_tenant", { defaultMessage: "New tenant" })}
           </Button>

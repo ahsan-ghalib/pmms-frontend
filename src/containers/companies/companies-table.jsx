@@ -12,19 +12,20 @@ import StatCard from "@/components/common/stat-card";
 import { StatusBadge } from "@/components/pmms/status-badge";
 import { companiesApi } from "@/services/companies/companies-api";
 import { apiError } from "@/lib/pmms";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function CompaniesTable() {
   const t = useT("common");
   const router = useRouter();
-  const { data: session } = useSession();
-  const canManage = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
+  const can = useCan();
+  const canCreate = can("Add Companies");
+  const canEdit = can("Edit Companies");
+  const canDelete = can("Delete Companies");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -193,9 +194,11 @@ export default function CompaniesTable() {
               <DropdownMenuLabel>Company actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push(`/companies/${row.original.id}`)}><Eye className="mr-2 h-4 w-4" /> View</DropdownMenuItem>
-              {canManage && !row.original.archived_at && <>
+              {canEdit && !row.original.archived_at && <>
                 <DropdownMenuItem onClick={() => router.push(`/companies/${row.original.id}/edit`)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => companyAdmin(row.original) ? router.push(`/users/edit/${companyAdmin(row.original).id}`) : toast.error("No Company Admin found")}><KeyRound className="mr-2 h-4 w-4" /> Edit Admin</DropdownMenuItem>
+              </>}
+              {canDelete && !row.original.archived_at && <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600" onClick={() => archiveCompany(row.original)}><Archive className="mr-2 h-4 w-4" /> Archive</DropdownMenuItem>
                 <DropdownMenuItem className="text-red-700" onClick={() => openDeletion(row.original)}><Trash2 className="mr-2 h-4 w-4" /> Delete Company</DropdownMenuItem>
@@ -213,7 +216,7 @@ export default function CompaniesTable() {
         icon={Building2}
         title={t("companies", { defaultMessage: "Companies" })}
         description={t("companies_desc", { defaultMessage: "Manage tenant companies across the platform." })}
-        actions={canManage && (
+        actions={canCreate && (
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/companies/create")}>
             <Plus className="mr-2 h-4 w-4" /> {t("new_company", { defaultMessage: "New company" })}
           </Button>

@@ -52,6 +52,12 @@ const STATUS_STYLES = {
   pass: "bg-emerald-100 text-emerald-800 border-emerald-200",
   fail: "bg-rose-100 text-rose-800 border-rose-200",
   "business calendar": "bg-violet-100 text-violet-800 border-violet-200",
+  draft: "bg-slate-100 text-slate-700 border-slate-200",
+  issued: "bg-blue-100 text-blue-800 border-blue-200",
+  unpaid: "bg-amber-100 text-amber-800 border-amber-200",
+  partially_paid: "bg-sky-100 text-sky-800 border-sky-200",
+  paid: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  restricted: "bg-rose-100 text-rose-800 border-rose-200",
 };
 
 const PRIORITY_STYLES = {

@@ -10,16 +10,14 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { inventoryApi } from "@/services/inventory/pmms-inventory-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function PurchaseRequestDetails() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT("common");
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR].includes(role);
+  const canManage = useCan()("Edit Purchase Requests");
   const [pr, setPr] = useState(null);
 
   const load = async () => {

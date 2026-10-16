@@ -12,15 +12,13 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { inventoryApi } from "@/services/inventory/pmms-inventory-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function PurchaseRequestsTable() {
   const t = useT("common");
   const router = useRouter();
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canCreate = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR].includes(role);
+  const canCreate = useCan()("Add Purchase Requests");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");

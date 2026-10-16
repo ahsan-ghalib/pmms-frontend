@@ -10,11 +10,13 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { notificationsApi } from "@/services/notifications/notifications-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY = { audience: "all", language: "en", body: "", send_at: "" };
 
 export default function BroadcastsPage() {
   const t = useT("common");
+  const canSend = useCan()("Add Broadcasts");
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(EMPTY);
 
@@ -52,6 +54,7 @@ export default function BroadcastsPage() {
         title={t("broadcasts", { defaultMessage: "Broadcasts" })}
         description={t("broadcasts_desc", { defaultMessage: "Text-only messages to all users or a role group, immediately or scheduled." })}
       />
+      {canSend && (
       <section className="glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-2">
         <label className="space-y-1 text-sm">
           <span className="text-slate-500">{t("audience", { defaultMessage: "Audience" })}</span>
@@ -82,6 +85,7 @@ export default function BroadcastsPage() {
           <Button className="bg-violet-600 hover:bg-violet-700" onClick={send}>{t("send_broadcast", { defaultMessage: "Send / schedule" })}</Button>
         </div>
       </section>
+      )}
       <div className="space-y-3">
         {rows.map((row) => (
           <div key={row.id} className="glass-panel rounded-2xl p-4">

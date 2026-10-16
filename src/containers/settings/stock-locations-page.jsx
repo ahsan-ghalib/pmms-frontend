@@ -15,6 +15,7 @@ import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY_FORM = { name: "", code: "", property_id: "", company_id: "" };
 
@@ -23,6 +24,9 @@ const toCode = (value) => String(value || "").trim().toUpperCase().replace(/[^A-
 export default function StockLocationsPage() {
   const t = useT("common");
   const isSuper = normalizeRole(useSession().data?.user?.role) === Roles.SUPER_ADMIN;
+  const can = useCan();
+  const canAdd = can("Add Inventory");
+  const canEdit = can("Edit Inventory");
   const [rows, setRows] = useState([]);
   const [properties, setProperties] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -106,6 +110,7 @@ export default function StockLocationsPage() {
         <StatCard title={t("inactive", { defaultMessage: "Inactive" })} value={stats.inactive} theme="amber" icon={Warehouse} onClick={() => setFilter("inactive")} />
       </div>
 
+      {canAdd && (
       <section className="glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-5">
         {isSuper && (
           <select
@@ -131,6 +136,7 @@ export default function StockLocationsPage() {
           {t("add_stock_location", { defaultMessage: "Add location" })}
         </Button>
       </section>
+      )}
 
       <div className="space-y-3">
         {filtered.length === 0 ? (
@@ -150,9 +156,11 @@ export default function StockLocationsPage() {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge value={row.status} />
-              <Button size="sm" variant="outline" onClick={() => toggleStatus(row)}>
-                {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
-              </Button>
+              {canEdit && (
+                <Button size="sm" variant="outline" onClick={() => toggleStatus(row)}>
+                  {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
+                </Button>
+              )}
             </div>
           </div>
         ))}

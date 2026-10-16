@@ -14,6 +14,7 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 function toDraft(entry) {
   const settings = entry.settings || {};
@@ -43,6 +44,7 @@ function toNumber(value) {
 
 export default function CategoryCatalog() {
   const t = useT("common");
+  const canEdit = useCan()("Edit Categories");
   const [entries, setEntries] = useState([]);
   const [drafts, setDrafts] = useState({});
   const [expanded, setExpanded] = useState(null);
@@ -194,7 +196,7 @@ export default function CategoryCatalog() {
                     <label className="flex items-center gap-2 text-sm font-medium">
                       <Switch
                         checked={draft.selected}
-                        disabled={saving}
+                        disabled={saving || !canEdit}
                         onCheckedChange={(checked) => {
                           if (!checked && entry.selected) {
                             updateDraft(entry.id, { selected: false });
@@ -337,12 +339,12 @@ export default function CategoryCatalog() {
                           )}
                         </div>
 
-                        <div className="flex justify-end">
+                        {canEdit && <div className="flex justify-end">
                           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" disabled={saving} onClick={() => save(entry)}>
                             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {t("save_changes", { defaultMessage: "Save changes" })}
                           </Button>
-                        </div>
+                        </div>}
                       </div>
                     )}
                   </div>

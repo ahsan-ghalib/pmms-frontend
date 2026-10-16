@@ -21,7 +21,7 @@ import {
 import { SidebarBrand, NavDashboard, PoweredByEmara } from "@/components/layouts/sidebar-brand";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/use-t";
-import { canSeeModule } from "@/lib/permissions/role-access";
+import { useModuleAccess } from "@/hooks/use-module-access";
 
 export function useNavItems() {
   const t = useT("common");
@@ -76,6 +76,7 @@ export function useNavItems() {
       items: [
         { title: t("sidebar_languages", { defaultMessage: "Languages" }), url: "/languages", module: "languages" },
         { title: t("sidebar_subscriptions", { defaultMessage: "Subscriptions" }), url: "/subscriptions", module: "subscriptions" },
+        { title: t("sidebar_invoices", { defaultMessage: "Invoices" }), url: "/billing/invoices", module: "billing" },
         { title: t("sidebar_plan_features", { defaultMessage: "Plan Features" }), url: "/plan-features", module: "plan-features" },
         { title: t("sidebar_trials", { defaultMessage: "Trials" }), url: "/trials", module: "trials" },
         { title: t("sidebar_platform_settings", { defaultMessage: "Platform Settings" }), url: "/platform-settings", module: "platform-settings" },
@@ -119,7 +120,7 @@ export function AppSidebar({ ...props }) {
   const { data: session, status } = useSession();
   const t = useT("common");
   const navItems = useNavItems();
-  const role = session?.user?.role;
+  const { canSee } = useModuleAccess();
 
   const user = React.useMemo(() => {
     if (!session?.user) return null;
@@ -130,16 +131,13 @@ export function AppSidebar({ ...props }) {
     };
   }, [session]);
 
-  const filteredNavItems = React.useMemo(() => {
-    return navItems
-      .map((item) => {
-        if (item.module && !canSeeModule(role, item.module)) return null;
-        const items = (item.items || []).filter((sub) => !sub.module || canSeeModule(role, sub.module));
-        if (item.items?.length && items.length === 0) return null;
-        return { ...item, items };
-      })
-      .filter(Boolean);
-  }, [navItems, role]);
+  const filteredNavItems = navItems
+    .map((item) => {
+      const items = (item.items || []).filter((sub) => canSee(sub.module));
+      if (items.length === 0) return null;
+      return { ...item, items };
+    })
+    .filter(Boolean);
 
   return (
     <Sidebar
@@ -156,7 +154,7 @@ export function AppSidebar({ ...props }) {
           <p className="sidebar-section-label group-data-[collapsible=icon]:hidden">
             {t("sidebar_overview", { defaultMessage: "Overview" })}
           </p>
-          <NavDashboard />
+          {canSee("dashboard") && <NavDashboard />}
         </div>
         <div className="sidebar-divider" />
         <NavMain items={filteredNavItems} />

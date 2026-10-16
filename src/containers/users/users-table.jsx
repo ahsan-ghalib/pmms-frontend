@@ -12,7 +12,7 @@ import TableToolbar from "@/components/common/table-toolbar";
 import { usersApi } from "@/services/users/users-api";
 import useDebounce from "@/hooks/useDebounceRef";
 import { hasPermissionSync, Permissions } from "@/lib/permissions";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { Roles } from "@/lib/permissions/role-access";
 import { useTranslations } from "next-intl";
 import axiosInstance from "@/lib/axios";
 import {
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function UsersTable({
   filterType = "all",
@@ -34,7 +35,7 @@ export default function UsersTable({
   const router = useRouter();
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
-  const canManageSessions = normalizeRole(session?.user?.role) === Roles.SUPER_ADMIN;
+  const canManageSessions = useCan()("Edit Users");
 
   const [tableData, setTableData] = useState([]);
   const [page, setPage] = useState(0);

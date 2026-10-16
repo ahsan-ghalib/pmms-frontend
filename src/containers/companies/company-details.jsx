@@ -12,12 +12,18 @@ import { companiesApi } from "@/services/companies/companies-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import ExpiryCountdown from "@/components/pmms/expiry-countdown";
+import CompanyBillingSection from "@/containers/billing/company-billing-section";
+import { useSession } from "next-auth/react";
+import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function CompanyDetails() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT("common");
+  const isSuperAdmin = normalizeRole(useSession().data?.user?.role) === Roles.SUPER_ADMIN;
   const [company, setCompany] = useState(null);
+  const can = useCan();
 
   const load = async () => {
     try {
@@ -40,10 +46,12 @@ export default function CompanyDetails() {
         actions={
           <>
             <Button variant="outline" onClick={() => router.push("/companies")}>{t("back", { defaultMessage: "Back" })}</Button>
-            <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push(`/companies/${company.id}/edit`)}>
-              <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}
-            </Button>
-            {company.archived_at ? (
+            {can("Edit Companies") && (
+              <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push(`/companies/${company.id}/edit`)}>
+                <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}
+              </Button>
+            )}
+            {!can("Delete Companies") ? null : company.archived_at ? (
               <Button variant="outline" onClick={async () => { await companiesApi.restore(company.id); toast.success(t("restored", { defaultMessage: "Restored" })); load(); }}>
                 {t("restore", { defaultMessage: "Restore" })}
               </Button>
@@ -99,6 +107,7 @@ export default function CompanyDetails() {
               [t("code", { defaultMessage: "Code" }), company.code],
               [t("email", { defaultMessage: "Email" }), company.email || "—"],
               [t("phone", { defaultMessage: "Phone" }), company.phone || "—"],
+              [t("tax_number", { defaultMessage: "Tax number" }), company.tax_number || "—"],
               [t("timezone", { defaultMessage: "Timezone" }), company.timezone || "—"],
               [t("default_language", { defaultMessage: "Default language" }), company.default_language || "—"],
               [t("status", { defaultMessage: "Status" }), <StatusBadge key="status" value={company.archived_at ? "archived" : company.status} />],
@@ -168,6 +177,8 @@ export default function CompanyDetails() {
           </div>
         )}
       </div>
+
+      {isSuperAdmin && <CompanyBillingSection companyId={company.id} />}
     </div>
   );
 }

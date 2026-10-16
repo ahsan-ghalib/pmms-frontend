@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/use-t";
+import { cn } from "@/lib/utils";
 
 export default function OpsFilters({
   filters,
@@ -20,6 +21,8 @@ export default function OpsFilters({
   showTechnician = true,
   showStatus = true,
   showPriority = true,
+  className,
+  onDone,
 }) {
   const t = useT("common");
   const visibleSubLocations = filters.location_id
@@ -42,7 +45,7 @@ export default function OpsFilters({
   };
 
   return (
-    <section className="glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-4" aria-label={t("filters", { defaultMessage: "Filters" })}>
+    <section className={cn("glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-4", className)} aria-label={t("filters", { defaultMessage: "Filters" })}>
       <label className="space-y-1 text-sm">
         <span className="text-slate-500">{t("from", { defaultMessage: "From" })}</span>
         <Input type="date" value={filters.from || ""} onChange={set("from")} />
@@ -123,7 +126,7 @@ export default function OpsFilters({
         </label>
       )}
       <div className="flex items-end gap-2 md:col-span-2">
-        <Button type="button" className="bg-violet-600 hover:bg-violet-700" onClick={() => onApply?.(filters)}>{t("apply", { defaultMessage: "Apply" })}</Button>
+        <Button type="button" className="bg-violet-600 hover:bg-violet-700" onClick={() => { onApply?.(filters); onDone?.(); }}>{t("apply", { defaultMessage: "Apply" })}</Button>
         <Button type="button" variant="outline" onClick={() => { setFilters({}); onApply?.({}); }}>{t("clear_filters", { defaultMessage: "Clear" })}</Button>
       </div>
     </section>

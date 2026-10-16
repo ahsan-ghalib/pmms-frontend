@@ -41,6 +41,7 @@ export const authOptions = {
               language: data.user.language || "en",
               company: data.company || null,
               entitlements: data.entitlements || null,
+              modules: Array.isArray(data.modules) ? data.modules : null,
             };
           }
           return null;
@@ -73,6 +74,7 @@ export const authOptions = {
         token.language = user.language || "en";
         token.company = user.company || null;
         token.entitlements = user.entitlements || null;
+        token.modules = user.modules || null;
       }
       if (trigger === "update" && session) {
         if (session.vendor_status !== undefined) {
@@ -106,6 +108,7 @@ export const authOptions = {
       session.user.language = token.language || "en";
       session.user.company = token.company || null;
       session.user.entitlements = token.entitlements || null;
+      session.user.modules = token.modules || null;
       return session;
     },
   },

@@ -12,16 +12,15 @@ import PageHeader from "@/components/pmms/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import { workOrdersApi } from "@/services/work-orders/work-orders-api";
 import { apiError, formatDay, labelize } from "@/lib/pmms";
-import { useSession } from "next-auth/react";
-import { isManager } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const STATUSES = ["created", "assigned", "in_progress", "on_hold", "completed", "verified", "closed", "cancelled"];
 
 export default function WorkOrdersTable() {
   const t = useT("common");
   const router = useRouter();
-  const { data: session } = useSession();
+  const canCreate = useCan()("Add Work Orders");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -74,7 +73,7 @@ export default function WorkOrdersTable() {
         title={t("work_orders", { defaultMessage: "Work Orders" })}
         description={t("work_orders_desc", { defaultMessage: "Assign crews, track progress, and close jobs with a full audit trail." })}
         actions={
-          isManager(session?.user?.role) && (
+          canCreate && (
             <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/work-orders/create")}>
               <Plus className="h-4 w-4 mr-2" /> {t("manual_work_order", { defaultMessage: "Manual work order" })}
             </Button>

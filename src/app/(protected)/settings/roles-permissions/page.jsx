@@ -12,6 +12,8 @@ import { useTranslations } from "next-intl";
 import { companiesApi } from "@/services/companies/companies-api";
 import { platformApi } from "@/services/platform/platform-api";
 import { useSession } from "next-auth/react";
+import { refreshModuleAccess } from "@/lib/permissions/module-access";
+import { useCan } from "@/hooks/use-module-access";
 
 // Helper function to format permission names for display
 // Converts "add-users" to "Add Users"
@@ -26,6 +28,7 @@ export default function RolesPermissionsPage() {
   const t = useTranslations("admin");
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "super-admin";
+  const can = useCan();
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [companyModules, setCompanyModules] = useState([]);
@@ -176,8 +179,11 @@ export default function RolesPermissionsPage() {
     );
   };
 
+  const selectedRole = roles.find((role) => role.id === selectedRoleId);
+  const canEdit = isSuperAdmin || (selectedRole?.editable === true && can("Edit Roles & Permissions"));
+
   const handleSave = async () => {
-    if (!selectedRoleId) return;
+    if (!selectedRoleId || !canEdit) return;
     try {
       setIsSaving(true);
       const permissionIds = modules.flatMap((m) => [
@@ -191,9 +197,9 @@ export default function RolesPermissionsPage() {
       setOriginalModules(clonedData);
       
       toast.success("Permissions updated successfully");
+      refreshModuleAccess().catch(() => {});
     } catch (error) {
-      console.error("Failed to update permissions", error);
-      toast.error("Failed to update permissions");
+      toast.error(error?.response?.data?.message || "Failed to update permissions");
     } finally {
       setIsSaving(false);
     }
@@ -210,7 +216,7 @@ export default function RolesPermissionsPage() {
         </div>
         <Button
           onClick={handleSave}
-          disabled={!selectedRoleId || isSaving || !hasChanges}
+          disabled={!selectedRoleId || !canEdit || isSaving || !hasChanges}
           className="min-w-[120px]"
         >
           {isSaving ? (
@@ -226,7 +232,7 @@ export default function RolesPermissionsPage() {
 
       {isSuperAdmin && <div className="rounded-2xl border bg-white/40 p-4 dark:bg-slate-900/40"><div className="mb-3 flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Company module access</h2><p className="text-sm text-muted-foreground">Enable or disable company-level modules.</p></div><select className="h-10 rounded-md border bg-transparent px-3 text-sm" value={selectedCompanyId} onChange={(event) => setSelectedCompanyId(event.target.value)}><option value="">Select company</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></div>{selectedCompanyId && <><div className="grid gap-2 md:grid-cols-2">{companyModules.map((module) => <label key={module.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"><span>{module.name}</span><Switch checked={module.is_enabled} onCheckedChange={(checked) => setCompanyModules((items) => items.map((item) => item.id === module.id ? { ...item, is_enabled: checked } : item))} /></label>)}</div><Button className="mt-3" onClick={saveCompanyModules}>Save company modules</Button></>}</div>}
 
-      {!isSuperAdmin && <div className="rounded-2xl border bg-white/40 p-4 dark:bg-slate-900/40"><div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold">Custom company roles</h2><p className="text-sm text-muted-foreground">Add a custom role for your company team.</p></div><Button onClick={() => setShowCreateRole((value) => !value)}>{showCreateRole ? "Close" : "Add role"}</Button></div>{showCreateRole && <div className="mt-4 flex max-w-xl gap-2"><Input placeholder="Role name e.g. Finance Controller" value={roleName} onChange={(event) => setRoleName(event.target.value)} /><Button onClick={createRole} disabled={!roleName.trim()}>Add role</Button></div>}</div>}
+      {!isSuperAdmin && can("Add Roles & Permissions") && <div className="rounded-2xl border bg-white/40 p-4 dark:bg-slate-900/40"><div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold">Custom company roles</h2><p className="text-sm text-muted-foreground">Add a custom role for your company team.</p></div><Button onClick={() => setShowCreateRole((value) => !value)}>{showCreateRole ? "Close" : "Add role"}</Button></div>{showCreateRole && <div className="mt-4 flex max-w-xl gap-2"><Input placeholder="Role name e.g. Finance Controller" value={roleName} onChange={(event) => setRoleName(event.target.value)} /><Button onClick={createRole} disabled={!roleName.trim()}>Add role</Button></div>}</div>}
 
       <div className="flex gap-6">
         <div className="w-64 shrink-0 sticky top-4 self-start">
@@ -255,7 +261,12 @@ export default function RolesPermissionsPage() {
                     )}
                     onClick={() => setSelectedRoleId(role.id)}
                   >
-                    {role.display_name || role.name}
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate">{role.label || role.display_name || role.name}</span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {role.is_default ? t("role_default", { defaultMessage: "Default" }) : t("role_custom", { defaultMessage: "Custom" })}
+                      </span>
+                    </span>
                   </button>
                 ))
               )}
@@ -280,6 +291,11 @@ export default function RolesPermissionsPage() {
               </div>
             ) : (
               <>
+                {!canEdit && (
+                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                    {t("role_default_readonly", { defaultMessage: "Default roles are managed by the platform and shared by every company. Create a custom role to give your team a different set of permissions." })}
+                  </div>
+                )}
                 {/* Search Input */}
                 <div className="mb-4">
                   <div className="relative">
@@ -314,6 +330,7 @@ export default function RolesPermissionsPage() {
                           <span>{formatPermissionName(perm.name)}</span>
                           <Switch
                             checked={perm.has_permission}
+                            disabled={!canEdit}
                             onCheckedChange={() =>
                               handleTogglePermission(module.id, perm.id, false)
                             }
@@ -333,6 +350,7 @@ export default function RolesPermissionsPage() {
                           <span>{formatPermissionName(perm.name)}</span>
                           <Switch
                             checked={perm.has_permission}
+                            disabled={!canEdit}
                             onCheckedChange={() =>
                               handleTogglePermission(module.id, perm.id, true)
                             }

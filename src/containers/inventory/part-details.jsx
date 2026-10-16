@@ -10,15 +10,16 @@ import { StatusBadge } from "@/components/pmms/status-badge";
 import { inventoryApi } from "@/services/inventory/pmms-inventory-api";
 import { apiError, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function PartDetails() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT("common");
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR].includes(role);
+  const can = useCan();
+  const canEdit = can("Edit Inventory");
+  const canMoveStock = can("Add Inventory");
+  const canRaisePr = can("Add Purchase Requests");
   const [part, setPart] = useState(null);
   const [photo, setPhoto] = useState(null);
 
@@ -49,17 +50,17 @@ export default function PartDetails() {
         description={part.sku}
         actions={
           <div className="flex flex-wrap gap-2">
-            {canManage && (
+            {canMoveStock && (
               <Button variant="outline" onClick={() => router.push(`/inventory/parts/${part.id}/stock`)}>
                 <ArrowLeftRight className="mr-2 h-4 w-4" /> {t("manage_stock", { defaultMessage: "Manage stock" })}
               </Button>
             )}
-            {canManage && (
+            {canEdit && (
               <Button variant="outline" onClick={() => router.push(`/inventory/parts/${part.id}/edit`)}>
                 <Pencil className="mr-2 h-4 w-4" /> {t("edit", { defaultMessage: "Edit" })}
               </Button>
             )}
-            {canManage && part.is_low && (
+            {canRaisePr && part.is_low && (
               <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/inventory/purchase-requests/create")}>
                 <ShoppingCart className="mr-2 h-4 w-4" /> {t("create_pr", { defaultMessage: "Create PR" })}
               </Button>

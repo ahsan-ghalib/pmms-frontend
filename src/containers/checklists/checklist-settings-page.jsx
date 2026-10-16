@@ -13,6 +13,7 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { pmmsUsersApi } from "@/services/users/pmms-users-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY = {
   name: "",
@@ -36,6 +37,9 @@ const formFrom = (row) => ({
 
 export default function ChecklistSettingsPage() {
   const t = useT("common");
+  const can = useCan();
+  const canAdd = can("Add Checklists");
+  const canEdit = can("Edit Checklists");
   const [templates, setTemplates] = useState([]);
   const [properties, setProperties] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -241,12 +245,12 @@ export default function ChecklistSettingsPage() {
           {t("active", { defaultMessage: "Active" })}
         </label>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => { setEditing(null); setDetail(null); setForm(EMPTY); }}>{t("new", { defaultMessage: "New" })}</Button>
-          <Button className="bg-violet-600 hover:bg-violet-700" onClick={saveTemplate}>{t("save", { defaultMessage: "Save" })}</Button>
+          {canAdd && <Button variant="outline" onClick={() => { setEditing(null); setDetail(null); setForm(EMPTY); }}>{t("new", { defaultMessage: "New" })}</Button>}
+          {(editing ? canEdit : canAdd) && <Button className="bg-violet-600 hover:bg-violet-700" onClick={saveTemplate}>{t("save", { defaultMessage: "Save" })}</Button>}
         </div>
       </section>
 
-      {editing && savedRole && (
+      {canEdit && editing && savedRole && (
         <section className="glass-panel space-y-3 rounded-2xl p-5">
           <div>
             <h3 className="font-semibold">{t("reassign_checklist", { defaultMessage: "Reassign checklist" })}</h3>
@@ -307,9 +311,9 @@ export default function ChecklistSettingsPage() {
             <span className="text-slate-500">{t("item_ar", { defaultMessage: "Item (Arabic)" })}</span>
             <Input value={itemTitle.title_ar} onChange={(event) => setItemTitle((current) => ({ ...current, title_ar: event.target.value }))} />
           </label>
-          <div className="md:col-span-3 flex justify-end">
+          {canEdit && <div className="md:col-span-3 flex justify-end">
             <Button onClick={saveItem}>{t("add_item", { defaultMessage: "Add item" })}</Button>
-          </div>
+          </div>}
           {itemGroups.map((group) => (
             <div key={group.key || "general"} className="md:col-span-3 space-y-2">
               <p className="text-sm font-semibold text-slate-700">{group.key || t("checklist_general_section", { defaultMessage: "General" })}</p>
@@ -321,9 +325,11 @@ export default function ChecklistSettingsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge value={item.status} />
-                    <Button size="sm" variant="outline" onClick={() => toggleItem(item)}>
-                      {item.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
-                    </Button>
+                    {canEdit && (
+                      <Button size="sm" variant="outline" onClick={() => toggleItem(item)}>
+                        {item.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

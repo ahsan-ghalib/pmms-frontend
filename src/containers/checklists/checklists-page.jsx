@@ -12,10 +12,12 @@ import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { getGps } from "@/lib/geo";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function ChecklistsPage() {
   const t = useT("common");
   const router = useRouter();
+  const canStart = useCan()("Add Checklists");
   const [rows, setRows] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [assigned, setAssigned] = useState([]);
@@ -81,7 +83,7 @@ export default function ChecklistsPage() {
         title={t("daily_checklists", { defaultMessage: "Daily inspection checklists" })}
         description={t("daily_checklists_desc", { defaultMessage: "Supervisors and technicians start a checklist only after GPS verification at the property." })}
       />
-      {assigned.length > 0 && (
+      {canStart && assigned.length > 0 && (
         <section className="glass-panel space-y-3 rounded-2xl p-5">
           <h3 className="font-semibold">{t("assigned_to_me", { defaultMessage: "Assigned to me" })}</h3>
           <div className="grid gap-2 md:grid-cols-2">
@@ -101,6 +103,7 @@ export default function ChecklistsPage() {
           </div>
         </section>
       )}
+      {canStart && (
       <section className="glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-3">
         <label className="space-y-1 text-sm">
           <span className="text-slate-500">{t("checklist", { defaultMessage: "Checklist" })}</span>
@@ -122,6 +125,7 @@ export default function ChecklistsPage() {
           </Button>
         </div>
       </section>
+      )}
       <div className="space-y-2">
         {rows.map((row) => (
           <button key={row.id} type="button" className="glass-panel flex w-full justify-between rounded-2xl p-4 text-start" onClick={() => router.push(`/checklists/${row.id}`)}>

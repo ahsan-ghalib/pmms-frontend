@@ -132,13 +132,13 @@ export function StatusDonut({ title, subtitle, data }) {
       ) : (
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={rows} dataKey="value" nameKey="label" innerRadius={58} outerRadius={86} paddingAngle={3}>
+            <Pie data={rows} dataKey="value" nameKey="label" innerRadius="58%" outerRadius="86%" paddingAngle={3}>
               {rows.map((row, index) => (
                 <Cell key={row.key} fill={colorFor(row.key, index)} />
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [value, labelize(name)]} />
-            <Legend formatter={(value) => labelize(value)} />
+            <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} formatter={(value) => labelize(value)} />
           </PieChart>
         </ResponsiveContainer>
       )}

@@ -13,10 +13,14 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function ServicesPage() {
   const t = useT("common");
   const router = useRouter();
+  const can = useCan();
+  const canAdd = can("Add Services");
+  const canEdit = can("Edit Services");
   const [rows, setRows] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -56,11 +60,11 @@ export default function ServicesPage() {
         icon={Wrench}
         title={t("master_services_title", { defaultMessage: "Master services" })}
         description={t("master_services_desc", { defaultMessage: "Platform-wide services under each master category. Companies enable the ones they offer." })}
-        actions={
+        actions={canAdd && (
           <Button className="rounded-full bg-violet-600 hover:bg-violet-700" onClick={() => router.push("/settings/services/create")}>
             <Plus className="mr-2 h-4 w-4" /> {t("new_service", { defaultMessage: "New service" })}
           </Button>
-        }
+        )}
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -125,8 +129,8 @@ export default function ServicesPage() {
           icon={Wrench}
           title={t("no_services", { defaultMessage: "No services yet" })}
           description={t("no_services_desc", { defaultMessage: "Create a category first, then add services such as AC repair or leak fix." })}
-          actionLabel={t("new_service", { defaultMessage: "New service" })}
-          onAction={() => router.push("/settings/services/create")}
+          actionLabel={canAdd ? t("new_service", { defaultMessage: "New service" }) : undefined}
+          onAction={canAdd ? () => router.push("/settings/services/create") : undefined}
         />
       ) : (
         <div className="space-y-3">
@@ -153,7 +157,7 @@ export default function ServicesPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                {canEdit && <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => router.push(`/settings/services/${row.id}/edit`)}>
                     <Pencil className="mr-1 h-3.5 w-3.5" /> {t("edit", { defaultMessage: "Edit" })}
                   </Button>
@@ -182,7 +186,7 @@ export default function ServicesPage() {
                       {t("activate", { defaultMessage: "Activate" })}
                     </Button>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           ))}

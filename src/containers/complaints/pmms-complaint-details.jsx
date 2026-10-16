@@ -11,6 +11,7 @@ import { PriorityBadge, StatusBadge } from "@/components/pmms/status-badge";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import SlaPanel from "@/components/pmms/sla-panel";
+import { useCan } from "@/hooks/use-module-access";
 
 const NEXT = {
   submitted: "assigned",
@@ -20,11 +21,17 @@ const NEXT = {
   verified: "closed",
 };
 
+const TRANSITION_PERMISSION = {
+  verified: "Verify Complaints",
+  closed: "Close Complaints",
+};
+
 export default function PmmsComplaintDetails() {
   const { id } = useParams();
   const router = useRouter();
   const [complaint, setComplaint] = useState(null);
   const [note, setNote] = useState("");
+  const can = useCan();
 
   const load = async () => {
     try {
@@ -41,6 +48,8 @@ export default function PmmsComplaintDetails() {
   if (!complaint) return <div className="p-8 text-center text-muted-foreground">Loading complaint...</div>;
 
   const nextStatus = NEXT[complaint.status];
+  const canTransition = nextStatus && can(TRANSITION_PERMISSION[nextStatus] || "Assign Complaints");
+  const canNote = can("Edit Complaints");
 
   return (
     <div className="space-y-6">
@@ -51,7 +60,7 @@ export default function PmmsComplaintDetails() {
         actions={
           <>
             <Button variant="outline" onClick={() => router.push("/complaints")}>Back</Button>
-            {nextStatus && (
+            {canTransition && (
               <Button className="bg-violet-600 hover:bg-violet-700" onClick={async () => {
                 try {
                   await complaintsApi.transition(complaint.id, { status: nextStatus });
@@ -94,12 +103,16 @@ export default function PmmsComplaintDetails() {
           {(complaint.notes || []).map((item) => (
             <div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm">{item.note}<div className="text-xs text-slate-400 mt-1">{formatDate(item.created_at)}</div></div>
           ))}
-          <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add an internal note" />
-          <Button onClick={async () => {
-            await complaintsApi.addNote(complaint.id, note);
-            setNote("");
-            load();
-          }}>Add note</Button>
+          {canNote && (
+            <>
+              <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add an internal note" />
+              <Button onClick={async () => {
+                await complaintsApi.addNote(complaint.id, note);
+                setNote("");
+                load();
+              }}>Add note</Button>
+            </>
+          )}
         </div>
         <div className="rounded-2xl border bg-white/60 p-5 space-y-3">
           <p className="font-semibold">History</p>

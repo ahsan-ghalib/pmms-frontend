@@ -11,8 +11,7 @@ import { assetsApi, DOCUMENT_TYPE_LABELS } from "@/services/assets/assets-api";
 import { propertiesApi } from "@/services/properties/properties-api";
 import { apiError, formatDate, formatDay, labelize } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 const STATUSES = [
   { value: "active", label: "Active" },
@@ -24,8 +23,7 @@ export default function AssetDetails() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT("common");
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR, Roles.PROPERTY_MANAGER].includes(role);
+  const canManage = useCan()("Edit Assets");
   const [asset, setAsset] = useState(null);
   const [images, setImages] = useState({});
   const [properties, setProperties] = useState([]);

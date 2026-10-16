@@ -15,10 +15,14 @@ import { useT } from "@/lib/use-t";
 import { useSession } from "next-auth/react";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { cn } from "@/lib/utils";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function PartCategoriesPage() {
   const t = useT("common");
   const isSuper = normalizeRole(useSession().data?.user?.role) === Roles.SUPER_ADMIN;
+  const can = useCan();
+  const canAdd = can("Add Inventory");
+  const canEdit = can("Edit Inventory");
   const [rows, setRows] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -84,6 +88,7 @@ export default function PartCategoriesPage() {
         <StatCard title={t("inactive", { defaultMessage: "Inactive" })} value={stats.inactive} theme="amber" icon={Layers3} onClick={() => setFilter("inactive")} />
       </div>
 
+      {canAdd && (
       <section className="glass-panel grid gap-3 rounded-2xl p-5 md:grid-cols-4">
         {isSuper && (
           <select className="h-10 rounded-md border px-3 text-sm" value={form.company_id} onChange={(event) => setForm((current) => ({ ...current, company_id: event.target.value }))}>
@@ -95,6 +100,7 @@ export default function PartCategoriesPage() {
         <Input placeholder={t("name_ar", { defaultMessage: "Name (AR)" })} value={form.name_ar} onChange={(event) => setForm((current) => ({ ...current, name_ar: event.target.value }))} />
         <Button className="bg-violet-600 hover:bg-violet-700" onClick={createCategory}>{t("add_category", { defaultMessage: "Add category" })}</Button>
       </section>
+      )}
 
       <div className="space-y-3">
         {filtered.map((row) => (
@@ -105,9 +111,11 @@ export default function PartCategoriesPage() {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge value={row.status} />
-              <Button size="sm" variant="outline" onClick={() => toggleStatus(row)}>
-                {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
-              </Button>
+              {canEdit && (
+                <Button size="sm" variant="outline" onClick={() => toggleStatus(row)}>
+                  {row.status === "active" ? t("deactivate", { defaultMessage: "Deactivate" }) : t("activate", { defaultMessage: "Activate" })}
+                </Button>
+              )}
             </div>
           </div>
         ))}

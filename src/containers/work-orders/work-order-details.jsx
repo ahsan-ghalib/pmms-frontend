@@ -21,10 +21,11 @@ import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, formatDate, labelize } from "@/lib/pmms";
 import { compressImages, formatDuration, formatMeters, getGps } from "@/lib/geo";
 import { useSession } from "next-auth/react";
-import { Roles, isManager, normalizeRole } from "@/lib/permissions/role-access";
+import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import WorkOrderPhotos from "@/components/work-orders/work-order-photos";
 import AssetScanner from "@/components/work-orders/asset-scanner";
 import SlaPanel from "@/components/pmms/sla-panel";
+import { useCan } from "@/hooks/use-module-access";
 
 function historyActor(event) {
   if (event.on_behalf && event.actor_name && event.on_behalf_of_name) {
@@ -38,6 +39,7 @@ export default function WorkOrderDetails() {
   const router = useRouter();
   const { data: session } = useSession();
   const role = normalizeRole(session?.user?.role);
+  const can = useCan();
   const [workOrder, setWorkOrder] = useState(null);
   const [history, setHistory] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -88,7 +90,10 @@ export default function WorkOrderDetails() {
   if (!workOrder) return <div className="p-8 text-center text-muted-foreground">Loading work order...</div>;
 
   const readonly = workOrder.readonly;
-  const manager = isManager(role);
+  const manager = can("Assign Work Orders");
+  const canVerify = can("Verify Work Orders");
+  const canClose = can("Close Work Orders");
+  const canIssueParts = manager && can("Edit Inventory");
   const primary = (workOrder.assignments || []).find((item) => item.assignment_type === "primary" && !item.removed_at);
   const isPrimary = String(primary?.technician_id) === String(session?.user?.id);
   const closed = ["closed", "cancelled"].includes(workOrder.status);
@@ -211,7 +216,7 @@ export default function WorkOrderDetails() {
         {canAct && ["assigned", "in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("photos")}>Photos</Button>}
         {canAct && workOrder.status !== "on_hold" && <Button variant="outline" onClick={() => setDialog("hold")}>On hold</Button>}
         {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={openAddPart}>Add part</Button>}
-        {manager && !closed && <Button variant="outline" onClick={() => setDialog("issue")}>Issue parts</Button>}
+        {canIssueParts && !closed && <Button variant="outline" onClick={() => setDialog("issue")}>Issue parts</Button>}
         {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("usage")}>Record usage</Button>}
         {canAct && workOrder.status === "on_hold" && <Button onClick={() => run(() => workOrdersApi.resume(workOrder.id), "Resumed")}>Resume</Button>}
         {canAct && <Button variant="outline" onClick={() => setDialog("reschedule")}>Reschedule</Button>}
@@ -220,10 +225,10 @@ export default function WorkOrderDetails() {
           <Button variant="outline" onClick={() => withGps((coords) => workOrdersApi.checkOut(workOrder.id, coords), "Checked out")}>GPS check-out</Button>
         )}
         {canAct && ["in_progress", "on_hold"].includes(workOrder.status) && <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => setDialog("complete")}>Complete</Button>}
-        {manager && workOrder.status === "completed" && <Button onClick={() => run(() => workOrdersApi.verify(workOrder.id), "Verified")}>Verify</Button>}
-        {manager && workOrder.status === "completed" && <Button variant="outline" onClick={() => setDialog("rework")}>Rework</Button>}
-        {manager && ["completed", "verified"].includes(workOrder.status) && <Button onClick={() => setDialog("close")}>Close</Button>}
-        {manager && !closed && <Button variant="destructive" onClick={() => setDialog("cancel")}>Cancel</Button>}
+        {canVerify && workOrder.status === "completed" && <Button onClick={() => run(() => workOrdersApi.verify(workOrder.id), "Verified")}>Verify</Button>}
+        {canVerify && workOrder.status === "completed" && <Button variant="outline" onClick={() => setDialog("rework")}>Rework</Button>}
+        {canClose && ["completed", "verified"].includes(workOrder.status) && <Button onClick={() => setDialog("close")}>Close</Button>}
+        {canClose && !closed && <Button variant="destructive" onClick={() => setDialog("cancel")}>Cancel</Button>}
         {manager && !["completed", "verified", "closed", "cancelled"].includes(workOrder.status) && <Button variant="outline" onClick={() => setDialog("taxonomy")}>Edit category</Button>}
         {role === Roles.TENANT && workOrder.status === "closed" && <Button onClick={() => setDialog("rate")}>Rate</Button>}
       </div>
@@ -288,7 +293,7 @@ export default function WorkOrderDetails() {
                   {item.part_name || item.sku} · requested {item.requested_quantity} · approved {item.approved_quantity || 0} · issued {item.issued_quantity || 0} · used {item.used_quantity || 0} · returned {item.returned_quantity || 0}
                 </p>
               ))}
-              {manager && request.status === "requested" && (
+              {canIssueParts && request.status === "requested" && (
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => run(() => workOrdersApi.approvePartRequest(request.id), "Parts approved")}>Approve</Button>
                   <Button size="sm" variant="outline" onClick={() => {
@@ -301,13 +306,13 @@ export default function WorkOrderDetails() {
                   }}>Issue</Button>
                 </div>
               )}
-              {manager && request.status === "approved" && (
+              {canIssueParts && request.status === "approved" && (
                 <Button size="sm" variant="outline" onClick={() => {
                   setPartForm((current) => ({ ...current, request_id: request.id }));
                   setDialog("issue-request");
                 }}>Issue</Button>
               )}
-              {(manager || canAct) && request.status === "issued" && !closed && (
+              {(canIssueParts || canAct) && request.status === "issued" && !closed && (
                 <Button size="sm" variant="outline" onClick={() => {
                   setPartForm((current) => ({ ...current, request_id: request.id }));
                   setDialog("return-parts");

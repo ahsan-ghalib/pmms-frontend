@@ -14,12 +14,10 @@ import StatCard from "@/components/common/stat-card";
 import { platformApi } from "@/services/platform/platform-api";
 import { companiesApi } from "@/services/companies/companies-api";
 import { apiError, formatDate } from "@/lib/pmms";
-import { useSession } from "next-auth/react";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function TrialsPage() {
-  const role = normalizeRole(useSession().data?.user?.role);
-  const canManage = role === Roles.SUPER_ADMIN;
+  const canManage = useCan()("Add Trials");
   const [rows, setRows] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [editing, setEditing] = useState(null);

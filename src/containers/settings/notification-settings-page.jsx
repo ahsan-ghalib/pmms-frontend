@@ -12,12 +12,14 @@ import { companiesApi } from "@/services/companies/companies-api";
 import { apiError } from "@/lib/pmms";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
+import { useCan } from "@/hooks/use-module-access";
 
 export default function NotificationSettingsPage() {
   const t = useT("common");
   const { data: session } = useSession();
   const role = normalizeRole(session?.user?.role);
   const isSuper = role === Roles.SUPER_ADMIN;
+  const canSave = useCan()(["Add Notifications", "Edit Notifications"]);
   const [templates, setTemplates] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyId, setCompanyId] = useState("");
@@ -128,9 +130,9 @@ export default function NotificationSettingsPage() {
           <span className="text-slate-500">{t("body", { defaultMessage: "Body" })}</span>
           <textarea className="min-h-24 w-full rounded-md border p-3 text-sm" value={form.body} onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))} />
         </label>
-        <div className="md:col-span-2 flex justify-end">
+        {canSave && <div className="md:col-span-2 flex justify-end">
           <Button className="bg-violet-600 hover:bg-violet-700" onClick={save}>{t("save_template", { defaultMessage: "Save template" })}</Button>
-        </div>
+        </div>}
       </section>
       <div className="space-y-2">
         {templates.map((row) => (

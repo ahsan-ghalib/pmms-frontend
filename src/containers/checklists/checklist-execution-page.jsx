@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Building2, CalendarDays, ChevronDown, ClipboardCheck, ImagePlus, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,9 @@ import { checklistsApi } from "@/services/checklists/checklists-api";
 import { complaintsApi } from "@/services/complaints/complaints-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { compressImages } from "@/lib/geo";
-import { Roles, normalizeRole } from "@/lib/permissions/role-access";
 import { useT } from "@/lib/use-t";
 import { useLocaleContext } from "@/providers/locale-provider";
+import { useCan } from "@/hooks/use-module-access";
 
 const MAX_PHOTOS = 2;
 
@@ -32,9 +31,8 @@ export default function ChecklistExecutionPage({ id }) {
   const t = useT("common");
   const router = useRouter();
   const { locale } = useLocaleContext();
-  const { data: session } = useSession();
-  const role = normalizeRole(session?.user?.role);
-  const canCreateWo = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR].includes(role);
+  const can = useCan();
+  const canCreateWo = can("Add Work Orders");
   const [execution, setExecution] = useState(null);
   const [categories, setCategories] = useState([]);
   const [drafts, setDrafts] = useState({});
@@ -190,7 +188,7 @@ export default function ChecklistExecutionPage({ id }) {
 
   if (!execution) return <div className="glass-panel h-40 animate-pulse rounded-2xl" />;
 
-  const open = execution.status === "in_progress";
+  const open = execution.status === "in_progress" && can("Add Checklists");
   const results = execution.results || [];
   const pendingCount = results.filter((row) => row.result !== "pass" && row.result !== "fail").length;
   const services = categories.find((category) => category.id === failFlow?.category_id)?.services || [];

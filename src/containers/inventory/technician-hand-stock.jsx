@@ -18,6 +18,7 @@ import { companiesApi } from "@/services/companies/companies-api";
 import { apiError, formatDate } from "@/lib/pmms";
 import { useT } from "@/lib/use-t";
 import { Roles, normalizeRole } from "@/lib/permissions/role-access";
+import { useCan } from "@/hooks/use-module-access";
 
 const EMPTY_MOVE = { mode: null, stock_location_id: "", notes: "", lines: [{ ...EMPTY_LINE }] };
 
@@ -25,7 +26,7 @@ export default function TechnicianHandStock() {
   const t = useT("common");
   const role = normalizeRole(useSession().data?.user?.role);
   const isSuper = role === Roles.SUPER_ADMIN;
-  const canManage = [Roles.SUPER_ADMIN, Roles.COMPANY_ADMIN, Roles.SUPERVISOR].includes(role);
+  const canManage = useCan()("Add Inventory");
   const [companies, setCompanies] = useState([]);
   const [companyId, setCompanyId] = useState("");
   const [technicians, setTechnicians] = useState([]);
